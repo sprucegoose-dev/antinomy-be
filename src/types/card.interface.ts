@@ -4,3 +4,8 @@ export interface ICard {
     playerId?: number;
     cardTypeId: number;
 }
+
+export interface ICardFilters {
+    continuum?: boolean;
+    playerIds?: number[];
+}

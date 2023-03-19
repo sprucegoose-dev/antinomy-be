@@ -6,7 +6,7 @@ import { PlayerOrientation } from '../types/player.interface';
 
 export class ActionService {
 
-    static getDeployAction(codexColor: Color, continuumCards: Card[]): IActionPayload[] {
+    static getDeployActions(codexColor: Color, continuumCards: Card[]): IActionPayload[] {
         let actions: IActionPayload[] = [];
 
         for (const card of continuumCards) {
@@ -35,11 +35,13 @@ export class ActionService {
         return actions;
     }
 
-    static getPastAndFutureCards(player: Player, continuumCards: Card[]): { cardsInPast: Card[], cardsInFuture: Card[] } {
+    static getPastAndFutureCards(player: Player, cards: Card[]): { cardsInPast: Card[], cardsInFuture: Card[] } {
         const {
             position: playerPosition,
             orientation,
         } = player;
+
+        let continuumCards = [...cards];
 
         if (orientation === PlayerOrientation.TOP) {
             continuumCards.reverse();
@@ -47,11 +49,11 @@ export class ActionService {
 
         return {
             cardsInPast: continuumCards.slice(0, playerPosition),
-            cardsInFuture: continuumCards.slice(playerPosition),
+            cardsInFuture: continuumCards.slice(playerPosition + 1),
         };
     }
 
-    static getReplaceAction(player: Player, continuumCards: Card[]): IActionPayload[] {
+    static getReplaceActions(player: Player, continuumCards: Card[]): IActionPayload[] {
         let actions: IActionPayload[] = [];
         const {
             cardsInPast,
@@ -88,7 +90,7 @@ export class ActionService {
             }
         }
 
-        const cardInFuture = cardsInFuture[cardInHand.type.value];
+        const cardInFuture = cardsInFuture[cardInHand.type.value - 1];
 
         if (cardInFuture) {
             actions.push({

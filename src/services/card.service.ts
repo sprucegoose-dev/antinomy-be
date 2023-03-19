@@ -1,7 +1,8 @@
 
+import { Op } from 'sequelize';
 import { Card } from '../models/card.model';
 import { CardType } from '../models/card_type.model';
-import { ICard } from '../types/card.interface';
+import { ICard, ICardFilters } from '../types/card.interface';
 
 class CardService {
 
@@ -25,6 +26,37 @@ class CardService {
             include: [
                 CardType,
             ]
+        });
+    }
+
+    static async getCardsWithType(gameId: number, filters: ICardFilters): Promise<Card[]> {
+        let where: any = {
+            gameId: gameId,
+        };
+
+        if (filters.continuum) {
+            where = {
+                ...where,
+                index: {
+                    [Op.not]: null,
+                }
+            }
+        }
+
+        if (filters.playerIds) {
+            where = {
+                ...where,
+                playerId: {
+                    [Op.in]: filters.playerIds,
+                }
+            }
+        }
+
+        return await Card.findAll({
+            where,
+            include: [
+                CardType,
+            ],
         });
     }
 }

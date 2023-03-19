@@ -151,7 +151,6 @@ describe('GameService', () => {
             expect(GameService.hasSet(cards, Color.RED)).toBe(false);
         });
 
-
         it('should return \'false\' if 3 cards have the same number, but at least one is the Codex color', async () => {
             const cardTypes = await CardType.findAll({
                 where: {
@@ -193,7 +192,6 @@ describe('GameService', () => {
                 userId: userA.id,
                 gameId: game.id,
             });
-
             playerB = await PlayerService.create({
                 userId: userB.id,
                 gameId: game.id,
@@ -484,7 +482,6 @@ describe('GameService', () => {
                 userId: userA.id,
                 gameId: game.id,
             });
-
             playerB = await PlayerService.create({
                 userId: userB.id,
                 gameId: game.id,
@@ -511,7 +508,6 @@ describe('GameService', () => {
             expect(continuumCards.length).toBe(9);
         });
 
-
         it('should deal 3 cards to each player', async () => {
             await GameService.start(userA.id, game.id);
 
@@ -532,7 +528,6 @@ describe('GameService', () => {
             expect(playerACards.length).toBe(3);
             expect(playerBCards.length).toBe(3);
         });
-
 
         it('should deal one Codex card', async () => {
             await GameService.start(userA.id, game.id);
@@ -582,14 +577,12 @@ describe('GameService', () => {
         let playerB: Player;
         let resolveParadoxSpy: any;
 
-
         beforeAll(async () => {
             game = await GameService.create(userA.id);
             playerA = await PlayerService.create({
                 userId: userA.id,
                 gameId: game.id,
             });
-
             playerB = await PlayerService.create({
                 userId: userB.id,
                 gameId: game.id,
