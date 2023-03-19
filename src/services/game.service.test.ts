@@ -222,7 +222,6 @@ describe('GameService', () => {
 
             it(`should update the game state from ${GameState.SETUP} to ${GameState.STARTED} when both players have positions`, async () => {
                 const actionPayload: IActionPayload = {
-                    cardId: null,
                     targetIndex: 5,
                     type: ActionType.DEPLOY,
                 }
@@ -239,6 +238,114 @@ describe('GameService', () => {
 
             });
 
+        });
+
+        describe('handleReplace', () => {
+
+            afterEach(async () => {
+                await Card.truncate();
+            });
+
+            it('should place 3 cards from the player\'s instead of 3 cards in the continuum (lower index)', async () => {
+                await GameService.start(game.id);
+
+                const playerCards = await Card.findAll({
+                    where: {
+                        playerId: playerA.id,
+                    }
+                });
+
+                const playerCardIds = playerCards.map(c => c.id);
+
+                const actionPayload: IActionPayload = {
+                    targetIndex: 6,
+                    type: ActionType.REPLACE,
+                }
+
+                await GameService.handleReplace({ ...playerA.toJSON(), position: 5 }, actionPayload);
+
+
+                const updatedContinuumCards = await Card.findAll({
+                    where: {
+                        gameId: game.id,
+                        index: {
+                            [Op.in]: [6, 7, 8]
+                        }
+                    }
+                });
+
+
+                const updatedContinuumCardIds = updatedContinuumCards.map(c => c.id);
+
+                expect(updatedContinuumCardIds).toEqual(playerCardIds);
+            });
+
+            it('should place 3 cards from the continuum into the player\'s hand', async () => {
+                await GameService.start(game.id);
+
+
+                const cardsToPickUp = await Card.findAll({
+                    where: {
+                        gameId: game.id,
+                        index: {
+                            [Op.in]: [6, 7, 8]
+                        }
+                    }
+                });
+
+                const cardsToPickUpIds = cardsToPickUp.map(c => c.id);
+
+                const actionPayload: IActionPayload = {
+                    targetIndex: 6,
+                    type: ActionType.REPLACE,
+                }
+
+                await GameService.handleReplace({ ...playerA.toJSON(), position: 5 }, actionPayload);
+
+                const updatedPlayerCards = await Card.findAll({
+                    where: {
+                        index: null,
+                        playerId: playerA.id,
+                    }
+                });
+
+                const updatedPlayerCardIds = updatedPlayerCards.map(c => c.id);
+
+                expect(updatedPlayerCardIds).toEqual(cardsToPickUpIds);
+            });
+
+            it('should place 3 cards from the player\'s instead of 3 cards in the continuum (higher index)', async () => {
+                await GameService.start(game.id);
+
+                const playerCards = await Card.findAll({
+                    where: {
+                        playerId: playerA.id,
+                    }
+                });
+
+                const playerCardIds = playerCards.map(c => c.id);
+
+                const actionPayload: IActionPayload = {
+                    targetIndex: 4,
+                    type: ActionType.REPLACE,
+                }
+
+                await GameService.handleReplace({ ...playerA.toJSON(), position: 5 }, actionPayload);
+
+
+                const updatedContinuumCards = await Card.findAll({
+                    where: {
+                        gameId: game.id,
+                        index: {
+                            [Op.in]: [1, 2, 3]
+                        }
+                    }
+                });
+
+                const updatedContinuumCardIds = updatedContinuumCards.map(c => c.id);
+
+                expect(updatedContinuumCardIds).toEqual(playerCardIds);
+            });
         });
 
     });
@@ -305,11 +412,7 @@ describe('GameService', () => {
 
 
         it('should deal one Codex card', async () => {
-            try {
-                await GameService.start(game.id);
-            } catch (error) {
-                console.log(error);
-            }
+            await GameService.start(game.id);
 
             const codexCard = await Card.findOne({
                 where: {

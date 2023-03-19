@@ -9,6 +9,7 @@ import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
 import { GameState, IGameState } from '../types/game.interface';
 import CardService from './card.service';
+import { IPlayer } from '../types/player.interface';
 
 
 class GameService {
@@ -32,14 +33,7 @@ class GameService {
         for (let i = 0; i < cardTypes.length; i++) {
             let cardType = cardTypes[i];
 
-            if (i < 6) {
-                // deal cards to players
-                await CardService.create({
-                    cardTypeId: cardType.id,
-                    playerId: players[i < 3 ? 0 : 1].id,
-                    gameId,
-                });
-            } else if (i < cardTypes.length - 1) {
+            if (i < 9) {
                 // deal continuum cards
                 await CardService.create({
                     cardTypeId: cardType.id,
@@ -47,10 +41,17 @@ class GameService {
                     index: i,
                 });
 
-                if (i === cardTypes.length - 2) {
+                if (i === 8) {
                     // assign starting codex based on last card in continuum
                     codexColor = cardType.color;
                 }
+            } else if (i < cardTypes.length - 1) {
+                // deal cards to players
+                await CardService.create({
+                    cardTypeId: cardType.id,
+                    playerId: players[i < 12 ? 0 : 1].id,
+                    gameId,
+                });
             } else {
                 // leave the last card to be the codex
                 await CardService.create({
@@ -87,7 +88,7 @@ class GameService {
                 GameService.handleDeploy(null, payload);
                 break;
             case ActionType.MOVE:
-                GameService.handleReplace(payload);
+                GameService.handleReplace(null, payload);
                 break;
         }
         return null;
@@ -138,10 +139,52 @@ class GameService {
         }
     }
 
-    static async handleReplace(_payload: IActionPayload) {
-        // add 3 cards to player's hand
+    static async handleReplace(player: IPlayer, payload: IActionPayload): Promise<void> {
+        const cards = await Card.findAll({
+            where: {
+                gameId: player.gameId,
+            }
+        });
 
-        // place 3 cards from player's hand in the continuum
+        const continuumCards = [];
+        let playerCards = [];
+
+        for (const card of cards) {
+            if (card.index !== null) {
+                continuumCards.push(card.toJSON());
+            }
+
+            if (card.playerId === player.id) {
+                playerCards.push(card.toJSON());
+            }
+        }
+
+        const cardsToPickUp = player.position < payload.targetIndex ?
+            continuumCards.slice(payload.targetIndex, payload.targetIndex + 3) :
+            continuumCards.slice(payload.targetIndex - 3, payload.targetIndex);
+
+        playerCards = shuffle(playerCards);
+
+        for (let i = 0; i < cardsToPickUp.length; i++) {
+
+            await Card.update({
+                index: null,
+                playerId: player.id,
+            }, {
+                where: {
+                    id: cardsToPickUp[i].id,
+                }
+            });
+
+            await Card.update({
+                index: cardsToPickUp[i].index,
+                playerId: null,
+            }, {
+                where: {
+                    id: playerCards[i].id,
+                }
+            });
+        }
     }
 
     static hasSet(cardsInHand: Card[], codexColor: Color): boolean {
