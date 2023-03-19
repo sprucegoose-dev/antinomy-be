@@ -1,11 +1,9 @@
 import {
     Column,
     CreatedAt,
-    // CreatedAt,
     Model,
     Table,
     UpdatedAt,
-    // UpdatedAt,
 } from 'sequelize-typescript';
 
 @Table({

@@ -1,15 +1,15 @@
-import { ActionType, IActionPayload } from '../actions/actions.interface';
-import { Color } from '../card-type/card_type.interface';
 import { Card } from '../models/card.model';
-import { IGameState } from './game.interface';
+import { ActionType, IActionPayload } from '../types/action.interface';
+import { Color } from '../types/card_type.interface';
+import { IGameState } from '../types/game.interface';
 
-export class GameService {
+class GameService {
 
     create(): IGameState {
         return null;
     }
 
-    performAction(userId: number, payload: IActionPayload): IGameState {
+    performAction(_userId: number, payload: IActionPayload): IGameState {
         // retrieve cards
 
         switch (payload.type) {
@@ -26,20 +26,20 @@ export class GameService {
         return null;
     }
 
-    handleMove(payload: IActionPayload) {
+    handleMove(_payload: IActionPayload) {
 
     }
 
-    handleDeploy(payload: IActionPayload) {
+    handleDeploy(_payload: IActionPayload) {
 
     }
 
-    handleReplace(payload: IActionPayload) {
+    handleReplace(_payload: IActionPayload) {
 
     }
 
-    hasSet(cardsInHand: Card[], codexColor: Color): boolean {
-        const matches = {};
+    static hasSet(cardsInHand: Card[], codexColor: Color): boolean {
+        const matches: {[key: string]: number }= {};
 
         for (const card of cardsInHand) {
             if (card.type.color === codexColor) {
@@ -68,3 +68,5 @@ export class GameService {
         return Object.values(matches).includes(3);
     }
 }
+
+export default GameService;

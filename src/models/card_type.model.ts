@@ -3,9 +3,12 @@ import {
     Model,
     Table,
 } from 'sequelize-typescript';
-import { Color, Suit } from '../card-type/card_type.interface';
+import { Color, Suit } from '../types/card_type.interface';
 
-@Table
+@Table({
+    tableName: 'card_types',
+    timestamps: false,
+})
 export class CardType extends Model {
     @Column({ primaryKey: true, autoIncrement: true })
     id: number;
@@ -18,7 +21,4 @@ export class CardType extends Model {
 
     @Column
     color: Color;
-
-    @Column
-    index: number;
 }

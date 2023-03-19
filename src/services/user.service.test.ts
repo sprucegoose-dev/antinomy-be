@@ -1,11 +1,14 @@
 import bcrypt from 'bcrypt';
 import moment from 'moment';
 
-import { ERROR_NOT_FOUND, ERROR_UNAUTHORIZED } from '../helpers/ExceptionHandler';
+import {
+    ERROR_NOT_FOUND,
+    ERROR_UNAUTHORIZED,
+} from '../helpers/ExceptionHandler';
 import { User } from '../models/user.model';
 import UserService from './user.service';
 
-describe('User', () => {
+describe('UserService', () => {
     let userData: any;
 
     beforeEach(async () => {
@@ -141,15 +144,24 @@ describe('User', () => {
     describe('extendSession', () => {
 
         it('should extend the user session', async () => {
-            try {
-                const newUser = await UserService.create(userData);
-                await UserService.extendSession(newUser.sessionId);
-                const existingUser = await UserService.getOne(newUser.id);
-                expect(moment(existingUser.sessionExp).isAfter(newUser.sessionExp)).toBe(true);
-            } catch (error) {
-                console.log(error);
-            }
+            const currentSession = moment().format('YYYY-MM-DD HH:mm:ss');
+            let newUser = await UserService.create(userData);
 
+            await User.update({
+                sessionExp: currentSession,
+            },
+                {
+                    where: {
+                        id: newUser.id,
+                    }
+                }
+            );
+
+            newUser = await UserService.getOne(newUser.id);
+
+            await UserService.extendSession(newUser.sessionId);
+            const existingUser = await UserService.getOne(newUser.id);
+            expect(moment(existingUser.sessionExp).isAfter(newUser.sessionExp)).toBe(true);
         });
 
     });

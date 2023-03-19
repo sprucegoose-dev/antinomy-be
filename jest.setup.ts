@@ -1,5 +1,9 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from './database/connection';
+import { Card } from './src/models/card.model';
+import { CardType } from './src/models/card_type.model';
+import { Game } from './src/models/game.model';
+import { Player } from './src/models/player.model';
 import { User } from './src/models/user.model';
 
 const glob = require('glob');
@@ -7,6 +11,10 @@ const path = require('path');
 
 sequelize.addModels([
     User,
+    Player,
+    Game,
+    CardType,
+    Card,
 ]);
 
 beforeAll(async () => {

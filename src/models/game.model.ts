@@ -4,9 +4,9 @@ import {
     Model,
     Table,
 } from 'sequelize-typescript';
+import { GamePhase, GameState } from '../types/game.interface';
 import { Player } from './player.model';
 import { User } from './user.model';
-import { GamePhase, GameState } from '../game/game.interface';
 
 
 @Table

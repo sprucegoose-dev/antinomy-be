@@ -16,7 +16,7 @@ module.exports = {
                 autoIncrement: true
             },
             index: Sequelize.INTEGER,
-            type_id: {
+            card_type_id: {
                 ...foreignKey,
                 references: {
                     model: 'card_types',
@@ -29,6 +29,7 @@ module.exports = {
                     model: 'games',
                     key: 'id',
                 },
+                allowNull: true,
             },
             player_id: {
                 ...foreignKey,
@@ -36,6 +37,7 @@ module.exports = {
                     model: 'players',
                     key: 'id',
                 },
+                allowNull: true,
             },
             created_at: Sequelize.DATE,
             updated_at: Sequelize.DATE,

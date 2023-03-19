@@ -4,11 +4,11 @@ import {
     Model,
     Table,
 } from 'sequelize-typescript';
+import { PlayerOrientation } from '../types/player.interface';
 import { Game } from './game.model';
 import { User } from './user.model';
-import { PlayerOrientation } from '../player/player.interface';
 
-@Table
+@Table({ timestamps: false })
 export class Player extends Model {
     @Column({ primaryKey: true, autoIncrement: true })
     id: number;

@@ -20,6 +20,7 @@
       "strictPropertyInitialization": false,
       "emitDecoratorMetadata": true,
       "allowJs": true,
+      "strictNullChecks": false,
     },
     "exclude": ["node_modules"]
   }

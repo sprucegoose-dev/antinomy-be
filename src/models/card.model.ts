@@ -8,7 +8,7 @@ import { CardType } from './card_type.model';
 import { Game } from './game.model';
 import { Player } from './player.model';
 
-@Table
+@Table({ timestamps: false })
 export class Card extends Model {
     @Column({ primaryKey: true, autoIncrement: true })
     id: number;
@@ -31,18 +31,25 @@ export class Card extends Model {
     })
     playerId: number;
 
+    @Column({
+        field: 'card_type_id',
+        references: {
+            model: CardType,
+            key: 'id',
+        }
+    })
     @Column
-    typeId: number;
+    cardTypeId: number;
 
     @Column
     index: number;
 
-    @BelongsTo(() => CardType)
+    @BelongsTo(() => CardType, 'cardTypeId')
     type: CardType
 
-    @BelongsTo(() => Player)
+    @BelongsTo(() => Player, 'playerId')
     player: Player
 
-    @BelongsTo(() => Game)
+    @BelongsTo(() => Game, 'gameId')
     game: Game
 }
