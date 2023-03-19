@@ -21,6 +21,10 @@
       "emitDecoratorMetadata": true,
       "allowJs": true,
       "strictNullChecks": false,
+      "typeRoots": [
+            "./src/types/index.interface.ts",
+            "node_modules/@types"
+        ],
     },
     "exclude": ["node_modules"]
   }

@@ -206,7 +206,7 @@ describe('GameService', () => {
                 const actionPayload: IActionPayload = {
                     targetIndex: 4,
                     type: ActionType.DEPLOY,
-                }
+                };
 
                 await GameService.handleDeploy(playerA, actionPayload);
 
@@ -223,7 +223,7 @@ describe('GameService', () => {
                 const actionPayload: IActionPayload = {
                     targetIndex: 5,
                     type: ActionType.DEPLOY,
-                }
+                };
 
                 await GameService.handleDeploy(playerB, actionPayload);
 
@@ -246,7 +246,7 @@ describe('GameService', () => {
             });
 
             it('should place 3 cards from the player\'s instead of 3 cards in the continuum (lower index)', async () => {
-                await GameService.start(game.id);
+                await GameService.start(userA.id, game.id);
 
                 const playerCards = await Card.findAll({
                     where: {
@@ -259,10 +259,11 @@ describe('GameService', () => {
                 const actionPayload: IActionPayload = {
                     targetIndex: 6,
                     type: ActionType.REPLACE,
-                }
+                };
 
-                await GameService.handleReplace({ ...playerA.toJSON(), position: 5 }, actionPayload);
+                playerA.position = 5;
 
+                await GameService.handleReplace(playerA, actionPayload);
 
                 const updatedContinuumCards = await Card.findAll({
                     where: {
@@ -280,7 +281,7 @@ describe('GameService', () => {
             });
 
             it('should place 3 cards from the continuum into the player\'s hand', async () => {
-                await GameService.start(game.id);
+                await GameService.start(userA.id, game.id);
 
 
                 const cardsToPickUp = await Card.findAll({
@@ -297,9 +298,11 @@ describe('GameService', () => {
                 const actionPayload: IActionPayload = {
                     targetIndex: 6,
                     type: ActionType.REPLACE,
-                }
+                };
 
-                await GameService.handleReplace({ ...playerA.toJSON(), position: 5 }, actionPayload);
+                playerA.position = 5;
+
+                await GameService.handleReplace(playerA, actionPayload);
 
                 const updatedPlayerCards = await Card.findAll({
                     where: {
@@ -314,7 +317,7 @@ describe('GameService', () => {
             });
 
             it('should place 3 cards from the player\'s instead of 3 cards in the continuum (higher index)', async () => {
-                await GameService.start(game.id);
+                await GameService.start(userA.id, game.id);
 
                 const playerCards = await Card.findAll({
                     where: {
@@ -327,10 +330,11 @@ describe('GameService', () => {
                 const actionPayload: IActionPayload = {
                     targetIndex: 4,
                     type: ActionType.REPLACE,
-                }
+                };
 
-                await GameService.handleReplace({ ...playerA.toJSON(), position: 5 }, actionPayload);
+                playerA.position = 5;
 
+                await GameService.handleReplace(playerA, actionPayload);
 
                 const updatedContinuumCards = await Card.findAll({
                     where: {
@@ -355,7 +359,7 @@ describe('GameService', () => {
             });
 
             it('should update the player\'s position to the target index', async () => {
-                await GameService.start(game.id);
+                await GameService.start(userA.id, game.id);
 
                 const playerCards = await await Card.findAll({
                     where: {
@@ -367,9 +371,11 @@ describe('GameService', () => {
                     sourceCardId: playerCards[0].id,
                     targetIndex: 6,
                     type: ActionType.MOVE,
-                }
+                };
 
-                await GameService.handleMove({ ...playerA.toJSON(), position: 5 }, actionPayload);
+                playerA.position = 5;
+
+                await GameService.handleMove(playerA, actionPayload);
 
                 const updatedPlayer = await Player.findOne({
                     where: {
@@ -381,7 +387,7 @@ describe('GameService', () => {
             });
 
             it('should swap the player\'s card with a card from the continuum', async () => {
-                await GameService.start(game.id);
+                await GameService.start(userA.id, game.id);
 
                 const playerCards = await await Card.findAll({
                     where: {
@@ -402,7 +408,9 @@ describe('GameService', () => {
                     }
                 });
 
-                await GameService.handleMove({ ...playerA.toJSON(), position: 5 }, actionPayload);
+                playerA.position = 5;
+
+                await GameService.handleMove(playerA, actionPayload);
 
 
                 const updatedPlayerCard = await Card.findAll({
@@ -424,7 +432,7 @@ describe('GameService', () => {
             });
 
             it('should advance the codex color if the player has formed a set (i.e. \'paradox\')', async () => {
-                await GameService.start(game.id);
+                await GameService.start(userA.id, game.id);
 
                 const currentGame = await Game.findOne({
                     where: {
@@ -448,7 +456,9 @@ describe('GameService', () => {
                     type: ActionType.MOVE,
                 };
 
-                await GameService.handleMove({ ...playerA.toJSON(), position: 5 }, actionPayload);
+                playerA.position = 5;
+
+                await GameService.handleMove(playerA, actionPayload);
 
                 const updatedGame = await Game.findOne({
                     where: {
@@ -486,7 +496,7 @@ describe('GameService', () => {
         });
 
         it('should deal 9 continuum cards', async () => {
-            await GameService.start(game.id);
+            await GameService.start(userA.id, game.id);
 
             const continuumCards = await Card.findAll({
                 where: {
@@ -503,7 +513,7 @@ describe('GameService', () => {
 
 
         it('should deal 3 cards to each player', async () => {
-            await GameService.start(game.id);
+            await GameService.start(userA.id, game.id);
 
             const playerACards = await Card.findAll({
                 where: {
@@ -525,7 +535,7 @@ describe('GameService', () => {
 
 
         it('should deal one Codex card', async () => {
-            await GameService.start(game.id);
+            await GameService.start(userA.id, game.id);
 
             const codexCard = await Card.findOne({
                 where: {
@@ -539,7 +549,7 @@ describe('GameService', () => {
         });
 
         it('should set the starting Codex color to the color of the last card in the continuum', async () => {
-            await GameService.start(game.id);
+            await GameService.start(userA.id, game.id);
 
             const updatedGame = await Game.findOne({
                 where: {
@@ -585,7 +595,7 @@ describe('GameService', () => {
                 gameId: game.id,
             });
 
-            await GameService.start(game.id);
+            await GameService.start(userA.id, game.id);
 
             resolveParadoxSpy = jest.spyOn(GameService, 'resolveParadox');
         });

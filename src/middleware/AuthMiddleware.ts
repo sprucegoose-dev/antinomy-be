@@ -12,6 +12,8 @@ class AuthMiddleware {
     async isAuthenticated(req: Request, _: Response, next: NextFunction) {
         const publicRoutes = [
             '/',
+            '/user/login',
+            '/game/all',
         ];
         const { path, headers: { authorization } } = req;
 

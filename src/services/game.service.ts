@@ -7,9 +7,15 @@ import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
-import { GameState, ICombatData, IGameState } from '../types/game.interface';
+import { GameState, ICombatData } from '../types/game.interface';
 import CardService from './card.service';
-import { IPlayer } from '../types/player.interface';
+import { PlayerOrientation } from '../types/player.interface';
+import {
+    CustomException,
+    ERROR_BAD_REQUEST,
+    ERROR_FORBIDDEN,
+    ERROR_NOT_FOUND,
+} from '../helpers/ExceptionHandler';
 
 
 class GameService {
@@ -20,13 +26,30 @@ class GameService {
         });
     }
 
-    static async start(gameId: number): Promise<void> {
-        const cardTypes = shuffle(await CardType.findAll());
-        const players = await Player.findAll({
+    static async start(userId: number, gameId: number): Promise<void> {
+        const game = await Game.findOne({
             where: {
-                gameId,
-            }
-        })
+                id: gameId,
+            },
+            include: [
+                {
+                    model: Player,
+                    as: 'players',
+                }
+            ]
+        });
+
+        if (game.creatorId !== userId) {
+            throw new CustomException(ERROR_FORBIDDEN, 'Only the game creator can start the game');
+        }
+
+        const players = game.players;
+
+        if (players.length !== 2) {
+            throw new CustomException(ERROR_BAD_REQUEST, 'The game must have two players');
+        }
+
+        const cardTypes = shuffle(await CardType.findAll());
 
         let codexColor: Color;
 
@@ -61,9 +84,31 @@ class GameService {
             }
         }
 
+        const startingPlayerId = shuffle(players)[0].id;
+
+        await Player.update({
+            orientation: PlayerOrientation.BOTTOM,
+        }, {
+            where: {
+                gameId,
+                id: startingPlayerId,
+            }
+        });
+
+        await Player.update({
+            orientation: PlayerOrientation.TOP,
+        }, {
+            where: {
+                gameId,
+                id: {
+                    [Op.not]: startingPlayerId
+                },
+            }
+        });
+
         await Game.update(
             {
-                activePlayerId: shuffle(players)[0].id,
+                activePlayerId: startingPlayerId,
                 codexColor,
                 state: GameState.SETUP,
             },
@@ -75,29 +120,50 @@ class GameService {
         );
     }
 
-    performAction(_userId: number, payload: IActionPayload): IGameState {
-        // ensure user is active player
-        // retrieve cards
+    static async performAction(userId: number, gameId: number, payload: IActionPayload): Promise<void> {
         // validate action
+
+        const game = await Game.findOne({
+            where: {
+                id: gameId,
+            },
+            include: [
+                {
+                    model: Player,
+                    as: 'players'
+                },
+            ]
+        });
+
+        if (!game) {
+            throw new CustomException(ERROR_NOT_FOUND, 'Game not found');
+        }
+
+        const activePlayer = game.players.find(p =>
+            p.id === game.activePlayerId && p.userId === userId
+        );
+
+        if (!activePlayer) {
+            throw new CustomException(ERROR_BAD_REQUEST, 'You are not the active player');
+        }
 
         switch (payload.type) {
             case ActionType.MOVE:
-                GameService.handleMove(null, payload);
+                await GameService.handleMove(activePlayer, payload);
                 break;
             case ActionType.MOVE:
-                GameService.handleDeploy(null, payload);
+                await GameService.handleDeploy(activePlayer, payload);
                 break;
             case ActionType.MOVE:
-                GameService.handleReplace(null, payload);
+                await GameService.handleReplace(activePlayer, payload);
                 break;
         }
-        return null;
     }
 
-    static async handleMove(playerInfo: IPlayer, payload: IActionPayload) {
+    static async handleMove(player: Player, payload: IActionPayload) {
         const game = await Game.findOne({
             where: {
-                id: playerInfo.gameId,
+                id: player.gameId,
             },
             include: [
                 {
@@ -115,8 +181,7 @@ class GameService {
 
         const continuumCard = game.cards.find(c => c.index === payload.targetIndex);
         const codexColor =  game.codexColor;
-        const player = game.players.find(p => p.id === playerInfo.id);
-        const opponent =  game.players.find(p => p.id !== playerInfo.id);
+        const opponent =  game.players.find(p => p.id !== player.id);
         const playerCards = [...game.cards.filter(c =>
             c.playerId === player.id && c.id !== payload.sourceCardId
         ), continuumCard];
@@ -307,7 +372,7 @@ class GameService {
         });
     }
 
-    static async handleReplace(player: IPlayer, payload: IActionPayload): Promise<void> {
+    static async handleReplace(player: Player, payload: IActionPayload): Promise<void> {
         const cards = await Card.findAll({
             where: {
                 gameId: player.gameId,

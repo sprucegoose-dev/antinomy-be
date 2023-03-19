@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export enum ActionType {
     MOVE = 'move',
     DEPLOY = 'deploy',
@@ -8,4 +10,8 @@ export interface IActionPayload {
     sourceCardId?: number;
     targetIndex: number;
     type: ActionType;
+}
+
+export interface IActionRequest extends Request {
+    body: IActionPayload;
 }

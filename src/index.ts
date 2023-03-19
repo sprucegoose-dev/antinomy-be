@@ -1,6 +1,7 @@
 
 import UsersController from './controllers/user.controller';
 import GamesController from './controllers/game.controller';
+import AuthMiddleware from './middleware/AuthMiddleware';
 
 const express = require('express');
 const app = require('express')();
@@ -11,6 +12,7 @@ app.use(express.static('public'));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(AuthMiddleware.isAuthenticated);
 
 app.post('/user', UsersController.create);
 app.post('/user/login', UsersController.login);

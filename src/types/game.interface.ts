@@ -35,3 +35,5 @@ export interface ICombatData {
     playerCards: Card[];
     opponentCards: Card[];
 }
+
+export interface
