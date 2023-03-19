@@ -1,24 +1,30 @@
 import bcrypt from 'bcrypt';
+import moment from 'moment';
+
 import { ERROR_NOT_FOUND, ERROR_UNAUTHORIZED } from '../helpers/ExceptionHandler';
 import { User } from '../models/user.model';
 import UserService from './user.service';
 
 describe('User', () => {
+    let userData: any;
+
+    beforeEach(async () => {
+        userData = {
+            username: 'SpruceGoose',
+            email: 'spruce.goose@antinomy.com',
+            password: 'alrighty.then',
+        };
+
+        await User.truncate();
+    });
 
     describe('create', () => {
 
         it('should store a new User in the database', async () => {
-            const data = {
-                username: 'SpruceGoose',
-                email: 'spruce.goose@antinomy.com',
-                password: 'alrighty.then',
-            }
-
-            const user = await UserService.create(data);
-
-            expect(user.username).toBe(data.username);
-            expect(user.email).toBe(data.email);
-            expect(await bcrypt.compare(data.password, user.password)).toBe(true);
+            const user = await UserService.create(userData);
+            expect(user.username).toBe(userData.username);
+            expect(user.email).toBe(userData.email);
+            expect(await bcrypt.compare(userData.password, user.password)).toBe(true);
             expect(Date.parse((String(user.createdAt)))).not.toBeNaN();
             expect(Date.parse((String(user.updatedAt)))).not.toBeNaN();
         });
@@ -27,17 +33,17 @@ describe('User', () => {
 
     describe('update', () => {
 
-        it('should store a new user in the database', async () => {
-            const data = {
-                username: 'SpruceGoose',
+        it('should update a user in the database', async () => {
+            const user = await UserService.create(userData);
+            const updatedData = {
+                username: 'SpruceGoose2',
                 email: 'spruce.goose@gmail.com',
                 password: 'landed.on.the.moon!',
             }
-
-            const user = await UserService.update(1, data);
-            expect(user.username).toBe(data.username);
-            expect(user.email).toBe(data.email);
-            expect(await bcrypt.compare(data.password, user.password)).toBe(true);
+            const updatedUser = await UserService.update(user.id, updatedData);
+            expect(updatedUser.username).toBe(updatedData.username);
+            expect(updatedUser.email).toBe(updatedData.email);
+            expect(await bcrypt.compare(updatedData.password, updatedUser.password)).toBe(true);
         });
 
     });
@@ -45,8 +51,9 @@ describe('User', () => {
     describe('getOne', () => {
 
         it('should retrieve an existing user from the database', async () => {
-            const user = await UserService.getOne(1);
-            expect(user).toBeDefined();
+            const newUser = await UserService.create(userData);
+            const existingUser = await UserService.getOne(newUser.id);
+            expect(existingUser).toBeDefined();
         });
 
     });
@@ -55,13 +62,14 @@ describe('User', () => {
 
         it('should delete a user from the database', async () => {
             try {
-                await UserService.delete(1);
-                const user = await User.findOne({
+                const user = await UserService.create(userData);
+                await UserService.delete(user.id);
+                const deletedUser = await User.findOne({
                     where: {
-                        id: 1,
+                        id: user.id,
                     }
                 });
-                expect(user).toBeNull();
+                expect(deletedUser).toBeNull();
             } catch (error) {
                 console.log(error);
             }
@@ -108,6 +116,40 @@ describe('User', () => {
             } catch (error: any) {
                 expect(error.type).toBe(ERROR_UNAUTHORIZED);
             }
+        });
+
+    });
+
+    describe('findBySessionId', () => {
+
+        it('should return a user based on a session ID', async () => {
+            const newUser = await UserService.create(userData);
+            const existingUser = await UserService.findBySessionId(newUser.sessionId);
+            expect(existingUser.id).toBe(newUser.id);
+        });
+
+        it('should throw an exception if the session ID doesn\'t exist', async () => {
+            try {
+                await UserService.findBySessionId('invalid-session-id');
+            } catch (error: any) {
+                expect(error.type).toBe(ERROR_NOT_FOUND);
+            }
+        });
+
+    });
+
+    describe('extendSession', () => {
+
+        it('should extend the user session', async () => {
+            try {
+                const newUser = await UserService.create(userData);
+                await UserService.extendSession(newUser.sessionId);
+                const existingUser = await UserService.getOne(newUser.id);
+                expect(moment(existingUser.sessionExp).isAfter(newUser.sessionExp)).toBe(true);
+            } catch (error) {
+                console.log(error);
+            }
+
         });
 
     });
