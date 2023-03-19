@@ -6,6 +6,7 @@ import {
     Table,
     UpdatedAt,
 } from 'sequelize-typescript';
+import { Color } from '../types/card_type.interface';
 import { GamePhase, GameState } from '../types/game.interface';
 import { Player } from './player.model';
 import { User } from './user.model';
@@ -52,6 +53,9 @@ export class Game extends Model {
 
     @Column
     phase: GamePhase;
+
+    @Column
+    codexColor: Color;
 
     @CreatedAt
     @Column({ field: 'created_at' })

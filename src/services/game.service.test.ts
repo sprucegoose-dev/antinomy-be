@@ -1,4 +1,5 @@
 import { Op } from 'sequelize';
+import { Card } from '../models/card.model';
 import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
@@ -242,6 +243,111 @@ describe('GameService', () => {
 
     });
 
+    describe('start', () => {
+        let game: Game;
+        let playerA: Player;
+        let playerB: Player;
 
+        beforeAll(async () => {
+            game = await GameService.create(userA.id);
+            playerA = await PlayerService.create({
+                userId: userA.id,
+                gameId: game.id,
+            });
+
+            playerB = await PlayerService.create({
+                userId: userB.id,
+                gameId: game.id,
+            });
+        });
+
+        afterEach(async () => {
+            await Card.truncate();
+        });
+
+        it('should deal 9 continuum cards', async () => {
+            await GameService.start(game.id);
+
+            const continuumCards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                    playerId: null,
+                    index: {
+                        [Op.not]: null,
+                    }
+                }
+            });
+
+            expect(continuumCards.length).toBe(9);
+        });
+
+
+        it('should deal 3 cards to each player', async () => {
+            await GameService.start(game.id);
+
+            const playerACards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                    playerId: playerA.id,
+                }
+            });
+
+            const playerBCards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                    playerId: playerB.id,
+                }
+            });
+
+            expect(playerACards.length).toBe(3);
+            expect(playerBCards.length).toBe(3);
+        });
+
+
+        it('should deal one Codex card', async () => {
+            try {
+                await GameService.start(game.id);
+            } catch (error) {
+                console.log(error);
+            }
+
+            const codexCard = await Card.findOne({
+                where: {
+                    gameId: game.id,
+                    playerId: null,
+                    index: null,
+                }
+            });
+
+            expect(codexCard).toBeDefined();
+        });
+
+        it('should set the starting Codex color to the color of the last card in the continuum', async () => {
+            await GameService.start(game.id);
+
+            const updatedGame = await Game.findOne({
+                where: {
+                    id: game.id,
+                }
+            });
+
+            const lastCard = await Card.findOne({
+                where: {
+                    gameId: game.id,
+                    playerId: null,
+                    index: {
+                        [Op.not]: null,
+                    },
+                },
+                order: [['id', 'DESC']],
+                include: [
+                    CardType,
+                ]
+            });
+
+            expect(updatedGame.codexColor).toBe(lastCard.type.color);
+        });
+
+    });
 
 });

@@ -1,10 +1,15 @@
 import { Op } from 'sequelize';
+import shuffle from 'lodash.shuffle';
+
 import { Card } from '../models/card.model';
+import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
 import { GameState, IGameState } from '../types/game.interface';
+import CardService from './card.service';
+
 
 class GameService {
 
@@ -12,6 +17,61 @@ class GameService {
         return await Game.create({
             creatorId: userId,
         });
+    }
+
+    static async start(gameId: number): Promise<void> {
+        const cardTypes = shuffle(await CardType.findAll());
+        const players = await Player.findAll({
+            where: {
+                gameId,
+            }
+        })
+
+        let codexColor: Color;
+
+        for (let i = 0; i < cardTypes.length; i++) {
+            let cardType = cardTypes[i];
+
+            if (i < 6) {
+                // deal cards to players
+                await CardService.create({
+                    cardTypeId: cardType.id,
+                    playerId: players[i < 3 ? 0 : 1].id,
+                    gameId,
+                });
+            } else if (i < cardTypes.length - 1) {
+                // deal continuum cards
+                await CardService.create({
+                    cardTypeId: cardType.id,
+                    gameId,
+                    index: i,
+                });
+
+                if (i === cardTypes.length - 2) {
+                    // assign starting codex based on last card in continuum
+                    codexColor = cardType.color;
+                }
+            } else {
+                // leave the last card to be the codex
+                await CardService.create({
+                    cardTypeId: cardType.id,
+                    gameId,
+                });
+            }
+        }
+
+        await Game.update(
+            {
+                activePlayerId: shuffle(players)[0].id,
+                codexColor,
+                state: GameState.SETUP,
+            },
+            {
+                where: {
+                    id: gameId,
+                }
+            }
+        );
     }
 
     performAction(_userId: number, payload: IActionPayload): IGameState {
@@ -50,7 +110,6 @@ class GameService {
     }
 
     static async handleDeploy(player: Player, payload: IActionPayload): Promise<void> {
-        // assign position to player
         await Player.update({
             position: payload.targetIndex,
         }, {
@@ -68,7 +127,6 @@ class GameService {
             }
         });
 
-        // if both players have positioned themselves, start the game
         if (deployedPlayers.length === 2) {
             await Game.update({
                 state: GameState.STARTED,

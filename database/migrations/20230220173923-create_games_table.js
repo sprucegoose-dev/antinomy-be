@@ -35,6 +35,17 @@ module.exports = {
             },
             state: Sequelize.STRING,
             phase: Sequelize.STRING,
+            codexColor: {
+                type: Sequelize.ENUM,
+                values: [
+                    'red',
+                    'green',
+                    'purple',
+                    'blue',
+                ],
+                allowNull: true,
+                defaultValue: null,
+            },
             created_at: Sequelize.DATE,
             updated_at: Sequelize.DATE,
         };
