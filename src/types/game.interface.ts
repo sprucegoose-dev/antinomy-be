@@ -1,3 +1,6 @@
+import { Card } from '../models/card.model';
+import { Game } from '../models/game.model';
+import { Player } from '../models/player.model';
 import { ICard } from './card.interface';
 import { Color } from './card_type.interface';
 
@@ -23,4 +26,12 @@ export interface IGameState {
     points: number;
     state: GameState;
     phase: GamePhase;
+}
+
+export interface ICombatData {
+    game: Game;
+    player: Player;
+    opponent: Player;
+    playerCards: Card[];
+    opponentCards: Card[];
 }

@@ -7,7 +7,7 @@ import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
-import { GameState, IGameState } from '../types/game.interface';
+import { GameState, ICombatData, IGameState } from '../types/game.interface';
 import CardService from './card.service';
 import { IPlayer } from '../types/player.interface';
 
@@ -94,21 +94,10 @@ class GameService {
         return null;
     }
 
-    static async handleMove(player: IPlayer, payload: IActionPayload) {
-        let playerPoints = player.points;
-
-        // update player position
-        await Player.update({
-            position: payload.targetIndex,
-        }, {
-            where: {
-               id: player.id
-            },
-        });
-
+    static async handleMove(playerInfo: IPlayer, payload: IActionPayload) {
         const game = await Game.findOne({
             where: {
-                id: player.gameId,
+                id: playerInfo.gameId,
             },
             include: [
                 {
@@ -125,8 +114,21 @@ class GameService {
         })
 
         const continuumCard = game.cards.find(c => c.index === payload.targetIndex);
+        const codexColor =  game.codexColor;
+        const player = game.players.find(p => p.id === playerInfo.id);
+        const opponent =  game.players.find(p => p.id !== playerInfo.id);
+        const playerCards = [...game.cards.filter(c =>
+            c.playerId === player.id && c.id !== payload.sourceCardId
+        ), continuumCard];
+        const opponentCards = game.cards.filter(c =>
+            c.playerId  && c.playerId !== player.id
+        );
 
-        // swap card from the player's hand with a continuum card
+        // update player position
+        player.position = payload.targetIndex;
+        await player.save();
+
+        // swap the card from the player's hand with the continuum card at the target index
         await GameService.swapCards(
             player.id,
             payload.sourceCardId,
@@ -134,43 +136,114 @@ class GameService {
             continuumCard.index,
         );
 
-        const playerCards = [...game.cards.filter(c =>
-            c.playerId === player.id && c.id !== payload.sourceCardId
-        ), continuumCard];
-
-        // const opponentCards = game.cards.filter(c =>
-        //     c.playerId  && c.playerId !== player.id
-        // );
-
         // resolve combat if applicable
-
-        // check if played has a set (i.e. 'paradox')
-        if (GameService.hasSet(playerCards, game.codexColor)) {
-            playerPoints++;
-
-            // advance the codex color clockwise
-            game.codexColor = GameService.getNextCodeColor(game.codexColor);
-
-            // award player a point
-            await Player.update({
-                points: playerPoints,
-            }, {
-                where: {
-                   id: player.id
-                },
+        if (payload.targetIndex === opponent.position) {
+            await GameService.resolveCombat({
+                game,
+                player,
+                opponent,
+                playerCards,
+                opponentCards,
             });
+        }
 
-            // check victory condition
-            if (playerPoints === 5) {
-                game.state === GameState.ENDED;
-                game.winnerId === player.userId;
-            }
+        // check if the player has formed a set (i.e. 'paradox')
+        if (GameService.hasSet(playerCards, codexColor)) {
+            await GameService.resolveParadox(game, player);
         }
 
         // go to the next player
-        game.activePlayerId = game.players.find(p => p.id !== player.id).id;
+        game.activePlayerId = opponent.id;
 
         await game.save();
+    }
+
+    static async resolveParadox(game: Game, player: Player, opponent?: Player) {
+        // award player a point
+        const playerPoints = player.points + 1;
+
+        await Player.update({
+            points: playerPoints,
+        }, {
+            where: {
+               id: player.id
+            },
+        });
+
+        // deduct a point from opponent (only happens in combat)
+        if (opponent) {
+            await Player.update({
+                points: opponent.points - 1,
+            }, {
+                    where: {
+                    id: opponent.id
+                },
+            });
+        }
+
+        // advance the codex color clockwise
+        game.codexColor = GameService.getNextCodeColor(game.codexColor);
+
+        // check victory condition
+        if (playerPoints === 5) {
+            game.winnerId === player.userId;
+            game.state === GameState.ENDED;
+        }
+
+        await game.save();
+    }
+
+    static async resolveCombat({
+        game,
+        player,
+        opponent,
+        playerCards,
+        opponentCards,
+    }: ICombatData) {
+        let totalValue = 0;
+        let opponentTotalValue = 0;
+        let validPlayerCards = shuffle(playerCards.filter(c => c.type.color !== game.codexColor));
+        let validOpponentCards = shuffle(opponentCards.filter(c => c.type.color !== game.codexColor));
+        let winner;
+        let loser;
+
+        for (const card of validPlayerCards) {
+            totalValue += card.type.value;
+        }
+
+        for (const card of validOpponentCards) {
+            opponentTotalValue += card.type.value;
+        }
+
+        // The winner is the player with the higher total card value
+        if (totalValue > opponentTotalValue) {
+            winner = player;
+            loser = opponent;
+        } else if (opponentTotalValue > totalValue) {
+            winner = opponent;
+            loser = player;
+        } else {
+            // In case of a tie, compare the shuffled cards one at a time
+            for (let i = 0; i < 3; i++) {
+                const cardValue = validPlayerCards[i].type.value;
+                const opponentCardValue = validOpponentCards[i].type.value;
+
+                if (cardValue > opponentCardValue) {
+                    winner = player;
+                    loser = opponent;
+                    break;
+                } else if (opponentCardValue > cardValue) {
+                    winner = opponent;
+                    loser = player;
+                    break;
+                }
+            }
+        }
+
+        if (loser?.points) {
+            await GameService.resolveParadox(game, winner, loser);
+        }
+
     }
 
     static getNextCodeColor(currentColor: Color): Color {

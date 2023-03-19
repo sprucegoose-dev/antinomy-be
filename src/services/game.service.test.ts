@@ -566,4 +566,188 @@ describe('GameService', () => {
 
     });
 
+    describe('resolveCombat', () => {
+        let game: Game;
+        let playerA: Player;
+        let playerB: Player;
+        let resolveParadoxSpy: any;
+
+
+        beforeAll(async () => {
+            game = await GameService.create(userA.id);
+            playerA = await PlayerService.create({
+                userId: userA.id,
+                gameId: game.id,
+            });
+
+            playerB = await PlayerService.create({
+                userId: userB.id,
+                gameId: game.id,
+            });
+
+            await GameService.start(game.id);
+
+            resolveParadoxSpy = jest.spyOn(GameService, 'resolveParadox');
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should call GameService.resolveParadox if there is a winner and the loser has points to lose', async () => {
+            let cards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                },
+                include: [CardType]
+            });
+
+            game.codexColor = Color.RED;
+
+            cards = cards.map(c => c.toJSON());
+
+            const mockPlayerCards = cards.filter(c =>
+                [3 ,4].includes(c.type.value) && c.type.color !== game.codexColor
+            ).slice(0, 3);
+
+            const mockOpponentCards = cards.filter(c =>
+                [1, 2].includes(c.type.value)
+            ).slice(0, 3);
+
+            playerA.points = 3;
+            playerB.points = 2;
+
+            await GameService.resolveCombat({
+                game,
+                player: playerA,
+                opponent: playerB,
+                playerCards: mockPlayerCards,
+                opponentCards: mockOpponentCards,
+            });
+
+            expect(resolveParadoxSpy).toHaveBeenCalledWith(game, playerA, playerB);
+        });
+
+        it('should call GameService.resolveParadox via the tiebreaker when applicable', async () => {
+            let cards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                },
+                include: [CardType]
+            });
+
+            game.codexColor = Color.RED;
+
+            cards = cards.map(c => c.toJSON());
+
+            // a single card with a value of 3
+            const mockPlayerCards = [
+                {
+                    ...cards[0],
+                    type: {
+                        ...cards[0].type,
+                        color: Color.BLUE,
+                        value: 3,
+                    }
+                }
+            ];
+
+            // Three cards with a value of 1
+            const mockOpponentCards = cards.filter(c =>
+                c.type.color !== game.codexColor
+            ).slice(0, 3).map(c => {
+                c.type.value = 1;
+                return c;
+            });
+
+            playerA.points = 3;
+            playerB.points = 2;
+
+            await GameService.resolveCombat({
+                game,
+                player: playerA,
+                opponent: playerB,
+                // @ts-ignore
+                playerCards: mockPlayerCards,
+                opponentCards: mockOpponentCards,
+            });
+
+            expect(resolveParadoxSpy).toHaveBeenCalledWith(game, playerA, playerB);
+        });
+
+        it('should NOT call GameService.resolveParadox when players are tied', async () => {
+            let cards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                },
+                include: [CardType]
+            });
+
+            game.codexColor = Color.RED;
+
+            cards = cards.map(c => c.toJSON());
+
+            const mockPlayerCards = cards.filter(c =>
+                c.type.color !== game.codexColor
+            ).slice(0, 3).map(c => {
+                c.type.value = 2;
+                return c;
+            });
+            const mockOpponentCards = cards.filter(c =>
+                c.type.color !== game.codexColor
+            ).slice(0, 3).map(c => {
+                c.type.value = 2;
+                return c;
+            });
+
+            playerA.points = 3;
+            playerB.points = 2;
+
+            await GameService.resolveCombat({
+                game,
+                player: playerA,
+                opponent: playerB,
+                playerCards: mockPlayerCards,
+                opponentCards: mockOpponentCards,
+            });
+
+            expect(resolveParadoxSpy).not.toHaveBeenCalled();
+        });
+
+        it('should NOT call GameService.resolveParadox if there is a winner and the loser has NO points', async () => {
+            let cards = await Card.findAll({
+                where: {
+                    gameId: game.id,
+                },
+                include: [CardType]
+            });
+
+            game.codexColor = Color.RED;
+
+            cards = cards.map(c => c.toJSON());
+
+            const mockPlayerCards = cards.filter(c =>
+                [3 ,4].includes(c.type.value) && c.type.color !== game.codexColor
+            ).slice(0, 3);
+
+            const mockOpponentCards = cards.filter(c =>
+                [1, 2].includes(c.type.value)
+            ).slice(0, 3);
+
+            playerA.points = 3;
+            playerB.points = 0;
+
+            await GameService.resolveCombat({
+                game,
+                player: playerA,
+                opponent: playerB,
+                playerCards: mockPlayerCards,
+                opponentCards: mockOpponentCards,
+            });
+
+            expect(resolveParadoxSpy).not.toHaveBeenCalledWith(game, playerA, playerB);
+        });
+
+    });
+
 });
