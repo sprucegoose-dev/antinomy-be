@@ -2,12 +2,14 @@ import {
     BelongsTo,
     Column,
     CreatedAt,
+    HasMany,
     Model,
     Table,
     UpdatedAt,
 } from 'sequelize-typescript';
 import { Color } from '../types/card_type.interface';
 import { GamePhase, GameState } from '../types/game.interface';
+import { Card } from './card.model';
 import { Player } from './player.model';
 import { User } from './user.model';
 
@@ -75,4 +77,10 @@ export class Game extends Model {
 
     @BelongsTo(() => User, 'winnerId')
     winner: User
+
+    @HasMany(() => Card, 'gameId')
+    cards: Card[]
+
+    @HasMany(() => Player, 'gameId')
+    players: Player[]
 }

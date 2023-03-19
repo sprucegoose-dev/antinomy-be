@@ -204,7 +204,6 @@ describe('GameService', () => {
 
             it('should update player\'s position', async () => {
                 const actionPayload: IActionPayload = {
-                    cardId: null,
                     targetIndex: 4,
                     type: ActionType.DEPLOY,
                 }
@@ -346,6 +345,120 @@ describe('GameService', () => {
 
                 expect(updatedContinuumCardIds).toEqual(playerCardIds);
             });
+
+        });
+
+        describe('handleMove', () => {
+
+            afterEach(async () => {
+                await Card.truncate();
+            });
+
+            it('should update the player\'s position to the target index', async () => {
+                await GameService.start(game.id);
+
+                const playerCards = await await Card.findAll({
+                    where: {
+                        playerId: playerA.id,
+                    }
+                });
+
+                const actionPayload: IActionPayload = {
+                    sourceCardId: playerCards[0].id,
+                    targetIndex: 6,
+                    type: ActionType.MOVE,
+                }
+
+                await GameService.handleMove({ ...playerA.toJSON(), position: 5 }, actionPayload);
+
+                const updatedPlayer = await Player.findOne({
+                    where: {
+                        id: playerA.id,
+                    }
+                });
+
+                expect(updatedPlayer.position).toEqual(actionPayload.targetIndex);
+            });
+
+            it('should swap the player\'s card with a card from the continuum', async () => {
+                await GameService.start(game.id);
+
+                const playerCards = await await Card.findAll({
+                    where: {
+                        playerId: playerA.id,
+                    }
+                });
+
+                const actionPayload: IActionPayload = {
+                    sourceCardId: playerCards[0].id,
+                    targetIndex: 6,
+                    type: ActionType.MOVE,
+                };
+
+                const targetCard = await Card.findOne({
+                    where: {
+                        gameId: game.id,
+                        index: actionPayload.targetIndex,
+                    }
+                });
+
+                await GameService.handleMove({ ...playerA.toJSON(), position: 5 }, actionPayload);
+
+
+                const updatedPlayerCard = await Card.findAll({
+                    where: {
+                        playerId: playerA.id,
+                        id: targetCard.id,
+                    }
+                });
+
+                const updatedContinuumCard = await Card.findOne({
+                    where: {
+                        gameId: game.id,
+                        index: actionPayload.targetIndex,
+                    }
+                });
+
+                expect(updatedPlayerCard).toBeDefined();
+                expect(updatedContinuumCard.id).toBe(actionPayload.sourceCardId);
+            });
+
+            it('should advance the codex color if the player has formed a set (i.e. \'paradox\')', async () => {
+                await GameService.start(game.id);
+
+                const currentGame = await Game.findOne({
+                    where: {
+                        id: game.id,
+                    }
+                });
+
+                const playerCards = await await Card.findAll({
+                    where: {
+                        playerId: playerA.id,
+                    }
+                });
+
+                const hasSetSpy = jest.spyOn(GameService, 'hasSet');
+
+                hasSetSpy.mockReturnValueOnce(true);
+
+                const actionPayload: IActionPayload = {
+                    sourceCardId: playerCards[0].id,
+                    targetIndex: 6,
+                    type: ActionType.MOVE,
+                };
+
+                await GameService.handleMove({ ...playerA.toJSON(), position: 5 }, actionPayload);
+
+                const updatedGame = await Game.findOne({
+                    where: {
+                        id: game.id,
+                    }
+                });
+
+                expect(updatedGame.codexColor).toBe(GameService.getNextCodeColor(currentGame.codexColor));
+            });
+
         });
 
     });

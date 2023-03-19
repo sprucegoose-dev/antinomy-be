@@ -82,7 +82,7 @@ class GameService {
 
         switch (payload.type) {
             case ActionType.MOVE:
-                GameService.handleMove(payload);
+                GameService.handleMove(null, payload);
                 break;
             case ActionType.MOVE:
                 GameService.handleDeploy(null, payload);
@@ -94,20 +94,95 @@ class GameService {
         return null;
     }
 
-    static async handleMove(_payload: IActionPayload) {
+    static async handleMove(player: IPlayer, payload: IActionPayload) {
+        let playerPoints = player.points;
+
         // update player position
+        await Player.update({
+            position: payload.targetIndex,
+        }, {
+            where: {
+               id: player.id
+            },
+        });
 
-        // add card from player\'s hand to the continuum
+        const game = await Game.findOne({
+            where: {
+                id: player.gameId,
+            },
+            include: [
+                {
+                    model: Player,
+                    as: 'players',
+                },
+                {
+                    model: Card,
+                    include: [
+                        CardType,
+                    ],
+                }
+            ]
+        })
 
-        // add card from the continuum to player's hand
+        const continuumCard = game.cards.find(c => c.index === payload.targetIndex);
 
-        // initiate combat if applicable
+        // swap card from the player's hand with a continuum card
+        await GameService.swapCards(
+            player.id,
+            payload.sourceCardId,
+            continuumCard.id,
+            continuumCard.index,
+        );
 
-        // check if paradox has formed
+        const playerCards = [...game.cards.filter(c =>
+            c.playerId === player.id && c.id !== payload.sourceCardId
+        ), continuumCard];
 
-        // advance the code
+        // const opponentCards = game.cards.filter(c =>
+        //     c.playerId  && c.playerId !== player.id
+        // );
+
+        // resolve combat if applicable
+
+        // check if played has a set (i.e. 'paradox')
+        if (GameService.hasSet(playerCards, game.codexColor)) {
+            playerPoints++;
+
+            // advance the codex color clockwise
+            game.codexColor = GameService.getNextCodeColor(game.codexColor);
+
+            // award player a point
+            await Player.update({
+                points: playerPoints,
+            }, {
+                where: {
+                   id: player.id
+                },
+            });
+
+            // check victory condition
+            if (playerPoints === 5) {
+                game.state === GameState.ENDED;
+                game.winnerId === player.userId;
+            }
+        }
 
         // go to the next player
+        game.activePlayerId = game.players.find(p => p.id !== player.id).id;
+
+        await game.save();
+    }
+
+    static getNextCodeColor(currentColor: Color): Color {
+        const colors = Object.values(Color);
+        const currentIndex = colors.indexOf(currentColor);
+        let nextIndex = currentIndex - 1;
+
+        if (nextIndex === -1) {
+            nextIndex = colors.length - 1;
+        }
+
+        return colors[nextIndex];
     }
 
     static async handleDeploy(player: Player, payload: IActionPayload): Promise<void> {
@@ -139,6 +214,26 @@ class GameService {
         }
     }
 
+    static async swapCards(playerId: number, sourceCardId: number, continuumCardId: number, targetIndex: number) {
+        await Card.update({
+            index: null,
+            playerId,
+        }, {
+            where: {
+                id: continuumCardId,
+            }
+        });
+
+        await Card.update({
+            index: targetIndex,
+            playerId: null,
+        }, {
+            where: {
+                id: sourceCardId,
+            }
+        });
+    }
+
     static async handleReplace(player: IPlayer, payload: IActionPayload): Promise<void> {
         const cards = await Card.findAll({
             where: {
@@ -166,24 +261,12 @@ class GameService {
         playerCards = shuffle(playerCards);
 
         for (let i = 0; i < cardsToPickUp.length; i++) {
-
-            await Card.update({
-                index: null,
-                playerId: player.id,
-            }, {
-                where: {
-                    id: cardsToPickUp[i].id,
-                }
-            });
-
-            await Card.update({
-                index: cardsToPickUp[i].index,
-                playerId: null,
-            }, {
-                where: {
-                    id: playerCards[i].id,
-                }
-            });
+            await GameService.swapCards(
+                player.id,
+                playerCards[i].id,
+                cardsToPickUp[i].id,
+                cardsToPickUp[i].index
+            );
         }
     }
 
