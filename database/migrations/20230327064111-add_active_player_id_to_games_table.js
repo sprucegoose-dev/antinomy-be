@@ -15,6 +15,7 @@ module.exports = {
                 key: 'id',
             },
             after: 'creator_id',
+            allowNull: true,
         };
 
         return queryInterface.addColumn('games', 'active_player_id', schema);

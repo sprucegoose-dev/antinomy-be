@@ -36,10 +36,19 @@ module.exports = {
             position: {
                 type: Sequelize.INTEGER,
                 allowNull: true,
+                defaultValue: null,
+            },
+            orientation: {
+                type: Sequelize.ENUM,
+                values: [
+                    'top',
+                    'bottom',
+                ],
+                defaultValue: null,
             },
             points: {
                 type: Sequelize.INTEGER,
-                allowNull: false,
+                defaultValue: 0,
             },
         };
 

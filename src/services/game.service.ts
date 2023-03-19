@@ -1,41 +1,89 @@
+import { Op } from 'sequelize';
 import { Card } from '../models/card.model';
+import { Game } from '../models/game.model';
+import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
-import { IGameState } from '../types/game.interface';
+import { GameState, IGameState } from '../types/game.interface';
 
 class GameService {
 
-    create(): IGameState {
-        return null;
+    static async create(userId: number): Promise<Game> {
+        return await Game.create({
+            creatorId: userId,
+        });
     }
 
     performAction(_userId: number, payload: IActionPayload): IGameState {
+        // ensure user is active player
         // retrieve cards
+        // validate action
 
         switch (payload.type) {
             case ActionType.MOVE:
-                this.handleMove(payload);
+                GameService.handleMove(payload);
                 break;
             case ActionType.MOVE:
-                this.handleDeploy(payload);
+                GameService.handleDeploy(null, payload);
                 break;
             case ActionType.MOVE:
-                this.handleReplace(payload);
+                GameService.handleReplace(payload);
                 break;
         }
         return null;
     }
 
-    handleMove(_payload: IActionPayload) {
+    static async handleMove(_payload: IActionPayload) {
+        // update player position
 
+        // add card from player\'s hand to the continuum
+
+        // add card from the continuum to player's hand
+
+        // initiate combat if applicable
+
+        // check if paradox has formed
+
+        // advance the code
+
+        // go to the next player
     }
 
-    handleDeploy(_payload: IActionPayload) {
+    static async handleDeploy(player: Player, payload: IActionPayload): Promise<void> {
+        // assign position to player
+        await Player.update({
+            position: payload.targetIndex,
+        }, {
+            where: {
+                id: player.id,
+            }
+        });
 
+        const deployedPlayers = await Player.findAll({
+            where: {
+                gameId: player.gameId,
+                position: {
+                    [Op.not]: null,
+                }
+            }
+        });
+
+        // if both players have positioned themselves, start the game
+        if (deployedPlayers.length === 2) {
+            await Game.update({
+                state: GameState.STARTED,
+            }, {
+                where: {
+                    id: player.gameId,
+                }
+            });
+        }
     }
 
-    handleReplace(_payload: IActionPayload) {
+    static async handleReplace(_payload: IActionPayload) {
+        // add 3 cards to player's hand
 
+        // place 3 cards from player's hand in the continuum
     }
 
     static hasSet(cardsInHand: Card[], codexColor: Color): boolean {

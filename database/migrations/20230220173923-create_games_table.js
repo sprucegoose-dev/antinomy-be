@@ -17,21 +17,21 @@ module.exports = {
             },
             creator_id: {
                 type: Sequelize.INTEGER,
-                allowNull: false,
                 ...foreignKey,
                 references: {
                     model: 'users',
                     key: 'id',
                 },
+                allowNull: false,
             },
             winner_id: {
                 type: Sequelize.INTEGER,
-                allowNull: false,
                 ...foreignKey,
                 references: {
                     model: 'users',
                     key: 'id',
                 },
+                allowNull: true,
             },
             state: Sequelize.STRING,
             phase: Sequelize.STRING,

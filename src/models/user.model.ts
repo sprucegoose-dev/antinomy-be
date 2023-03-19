@@ -32,7 +32,7 @@ export class User extends Model {
     createdAt: Date;
 
     @UpdatedAt
-    @Column({ field: 'created_at' })
+    @Column({ field: 'updated_at' })
     // @ts-ignore
     updatedAt: Date;
 }

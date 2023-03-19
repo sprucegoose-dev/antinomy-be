@@ -1,15 +1,19 @@
 import {
     BelongsTo,
     Column,
+    CreatedAt,
     Model,
     Table,
+    UpdatedAt,
 } from 'sequelize-typescript';
 import { GamePhase, GameState } from '../types/game.interface';
 import { Player } from './player.model';
 import { User } from './user.model';
 
 
-@Table
+@Table({
+    timestamps: true,
+})
 export class Game extends Model {
     @Column({ primaryKey: true, autoIncrement: true })
     id: number;
@@ -24,11 +28,12 @@ export class Game extends Model {
     creatorId: number;
 
     @Column({
-        field: 'player_id',
+        field: 'active_player_id',
         references: {
             model: Player,
             key: 'id',
-        }
+        },
+        allowNull: true,
     })
     activePlayerId: number;
 
@@ -37,7 +42,8 @@ export class Game extends Model {
         references: {
             model: User,
             key: 'id',
-        }
+        },
+        allowNull: true,
     })
     winnerId: number;
 
@@ -47,11 +53,15 @@ export class Game extends Model {
     @Column
     phase: GamePhase;
 
-    @Column
-    updatedAt: string;
+    @CreatedAt
+    @Column({ field: 'created_at' })
+    // @ts-ignore
+    createdAt: Date;
 
-    @Column
-    createdAt: string;
+    @UpdatedAt
+    @Column({ field: 'updated_at' })
+    // @ts-ignore
+    updatedAt: Date;
 
     @BelongsTo(() => User, 'creatorId')
     creator: User

@@ -31,8 +31,10 @@ export class Player extends Model {
     })
     gameId: number;
 
+    @Column
     orientation: PlayerOrientation;
 
+    @Column
     position: number;
 
     @Column

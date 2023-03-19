@@ -5,7 +5,7 @@ export enum ActionType {
 }
 
 export interface IActionPayload {
-    cardId: number;
+    cardId?: number;
     targetIndex: number;
     type: ActionType;
 }
