@@ -4,9 +4,9 @@ import { Card } from '../models/card.model';
 import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
-import { User } from '../models/user.model';
 import { EventType } from '../types/event.interface';
 import { GameState } from '../types/game.interface';
+import { IUserResponse } from '../types/user.interface';
 import EventService from './event.service';
 import GameService from './game.service';
 import PlayerService from './player.service';
@@ -28,9 +28,9 @@ describe('GameService', () => {
         email: 'milky.fury@yahoo.com',
         password: 'smoothie',
     };
-    let userA: User;
-    let userB: User;
-    let userC: User;
+    let userA: IUserResponse;
+    let userB: IUserResponse;
+    let userC: IUserResponse;
 
     beforeAll(async () => {
         userA = await UserService.create(userDataA);

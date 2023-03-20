@@ -6,7 +6,7 @@ import {
     ERROR_UNAUTHORIZED,
 } from '../helpers/exception_handler';
 import { User } from '../models/user.model';
-import { PASSWORD_MIN_CHARS, USERNAME_MIN_CHARS } from '../types/user.interface';
+import { PASSWORD_MIN_CHARS, USERNAME_MAX_CHARS, USERNAME_MIN_CHARS } from '../types/user.interface';
 import UserService from './user.service';
 
 describe('UserService', () => {
@@ -26,11 +26,12 @@ describe('UserService', () => {
 
         it('should store a new User in the database', async () => {
             const user = await UserService.create(userData);
-            expect(user.username).toBe(userData.username);
-            expect(user.email).toBe(userData.email);
-            expect(await bcrypt.compare(userData.password, user.password)).toBe(true);
-            expect(Date.parse((String(user.createdAt)))).not.toBeNaN();
-            expect(Date.parse((String(user.updatedAt)))).not.toBeNaN();
+            const createdUser = await User.unscoped().findByPk(user.id);
+            expect(createdUser.username).toBe(userData.username);
+            expect(createdUser.email).toBe(userData.email);
+            expect(await bcrypt.compare(userData.password, createdUser.password)).toBe(true);
+            expect(Date.parse((String(createdUser.createdAt)))).not.toBeNaN();
+            expect(Date.parse((String(createdUser.updatedAt)))).not.toBeNaN();
         });
 
     });
@@ -100,7 +101,7 @@ describe('UserService', () => {
             const user = await UserService.create(data);
             const response = await UserService.login(data.email, 'correct-password');
 
-            expect(response.userId).toBe(user.id);
+            expect(response.id).toBe(user.id);
             expect(response.sessionId).toBeDefined();
             expect(response.sessionExp).toBeDefined();
             expect(response.username).toBe(user.username);
@@ -152,11 +153,11 @@ describe('UserService', () => {
     describe('extendSession', () => {
 
         it('should extend the user session', async () => {
-            const currentSession = moment().format('YYYY-MM-DD HH:mm:ss');
+            const currentSessionExp = moment().format('YYYY-MM-DD HH:mm:ss');
             let newUser = await UserService.create(userData);
 
             await User.update({
-                sessionExp: currentSession,
+                sessionExp: currentSessionExp,
             },
                 {
                     where: {
@@ -165,11 +166,11 @@ describe('UserService', () => {
                 }
             );
 
-            newUser = await UserService.getOne(newUser.id);
+            const updatedUser = await UserService.getOne(newUser.id);
 
-            await UserService.extendSession(newUser.sessionId);
-            const existingUser = await UserService.getOne(newUser.id);
-            expect(moment(existingUser.sessionExp).isAfter(newUser.sessionExp)).toBe(true);
+            await UserService.extendSession(updatedUser.sessionId);
+            const existingUser = await UserService.getOne(updatedUser.id);
+            expect(moment(existingUser.sessionExp).isAfter(updatedUser.sessionExp)).toBe(true);
         });
 
     });
@@ -214,6 +215,19 @@ describe('UserService', () => {
                 expect(error.message).toBe(`Username must be at least ${USERNAME_MIN_CHARS} characters`);
             }
         });
+
+        it(`should throw an error if the provided username is more than ${USERNAME_MAX_CHARS} characters`, async () => {
+                const payload = {
+                    username: 'very-long-username',
+                    email: 'valid-email@gmail.com',
+                    password: 'valid.password',
+                };
+                try {
+                    UserService.validateUserRequest(payload);
+                } catch (error: any) {
+                    expect(error.message).toBe(`Username cannot be more than ${USERNAME_MAX_CHARS} characters`);
+                }
+            });
 
 
     });

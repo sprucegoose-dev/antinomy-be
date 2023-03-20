@@ -3,11 +3,11 @@ import { Card } from '../models/card.model';
 import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
-import { User } from '../models/user.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color, Suit } from '../types/card_type.interface';
 import { EventType } from '../types/event.interface';
 import { GameState } from '../types/game.interface';
+import { IUserResponse } from '../types/user.interface';
 import CardService from './card.service';
 import CommandService from './command.service';
 import EventService from './event.service';
@@ -26,8 +26,8 @@ describe('CommandService', () => {
         email: 'violet.tide@gmail.com',
         password: 'animaniacs',
     };
-    let userA: User;
-    let userB: User;
+    let userA: IUserResponse;
+    let userB: IUserResponse;
 
     beforeAll(async () => {
         await Game.truncate();

@@ -1,9 +1,9 @@
 import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
-import { User } from '../models/user.model';
 import { ActionType } from '../types/action.interface';
 import { Color, Suit } from '../types/card_type.interface';
+import { IUserResponse } from '../types/user.interface';
 import { ActionService } from './action.service';
 import CardService from './card.service';
 import GameService from './game.service';
@@ -21,8 +21,8 @@ describe('ActionService', () => {
         email: 'violet.tide@gmail.com',
         password: 'animaniacs',
     };
-    let userA: User;
-    let userB: User;
+    let userA: IUserResponse;
+    let userB: IUserResponse;
     let game: Game;
     let playerA: Player;
 

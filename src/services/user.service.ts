@@ -11,13 +11,15 @@ import {
 import { User } from '../models/user.model';
 import {
     IUserRequest,
+    IUserResponse,
     PASSWORD_MIN_CHARS,
+    USERNAME_MAX_CHARS,
     USERNAME_MIN_CHARS,
 } from '../types/user.interface';
 
 class UserService {
 
-    static async create(payload: IUserRequest): Promise<User> {
+    static async create(payload: IUserRequest): Promise<IUserResponse> {
         const {
             username,
             email,
@@ -37,10 +39,15 @@ class UserService {
             sessionExp,
         });
 
-        return user.toJSON();
+        return {
+            id: user.id,
+            username,
+            sessionId,
+            sessionExp,
+        };
     }
 
-    static async login(email: string, password: string): Promise<any> {
+    static async login(email: string, password: string): Promise<IUserResponse> {
         const user = await User.unscoped().findOne({ where: { email }});
 
         if (!user) {
@@ -56,7 +63,7 @@ class UserService {
         }
 
         return {
-            userId: user.id,
+            id: user.id,
             sessionId: user.sessionId,
             sessionExp: user.sessionExp,
             username: user.username,
@@ -140,6 +147,10 @@ class UserService {
 
         if (payload.username.length < USERNAME_MIN_CHARS) {
             throw new CustomException(ERROR_BAD_REQUEST, `Username must be at least ${USERNAME_MIN_CHARS} characters`);
+        }
+
+        if (payload.username.length > USERNAME_MAX_CHARS) {
+            throw new CustomException(ERROR_BAD_REQUEST, `Username cannot be more than ${USERNAME_MAX_CHARS} characters`);
         }
     }
 
