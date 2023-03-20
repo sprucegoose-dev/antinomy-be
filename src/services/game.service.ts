@@ -17,6 +17,7 @@ import {
     ERROR_NOT_FOUND,
 } from '../helpers/exception_handler';
 import { ActionService } from './action.service';
+import PlayerService from './player.service';
 
 class GameService {
 
@@ -244,6 +245,76 @@ class GameService {
                 }
             ]
         });
+    }
+
+    static async join(userId: number, gameId: number): Promise<void> {
+        const activeGames = await Game.findAll({
+            where: {
+                state: {
+                    [Op.notIn]: [GameState.ENDED, GameState.CANCELLED]
+                },
+            }
+        });
+
+        const activePlayers = await Player.findAll({
+            where: {
+                userId,
+                gameId: {
+                    [Op.in]: activeGames.map(g => g.id),
+                },
+            }
+        });
+
+        if (activePlayers.length) {
+            throw new CustomException(ERROR_BAD_REQUEST, 'Please leave your other active game(s) before joining a new one.')
+        }
+
+        await PlayerService.create({ userId, gameId });
+    }
+
+    static async leave(userId: number, gameId: number): Promise<void> {
+        const game = await Game.findOne({
+            where: {
+                id: gameId,
+            },
+            include: [
+                {
+                    model: Player,
+                    as: 'players',
+                },
+            ]
+        });
+
+        if (!game) {
+            throw new CustomException(ERROR_BAD_REQUEST, 'Game not found');
+        }
+
+        const player = game.players.find(p => p.userId === userId);
+
+        if (!player) {
+            throw new CustomException(ERROR_BAD_REQUEST, 'You are not in this game');
+        }
+
+        switch (game.state) {
+            case GameState.CREATED:
+                await player.destroy();
+
+                if (game.creatorId === userId) {
+                    game.state = GameState.CANCELLED;
+                    await game.save();
+                }
+                break;
+            case GameState.ENDED:
+                throw new CustomException(ERROR_BAD_REQUEST, 'You cannot leave a game that has ended');
+            default:
+                game.winnerId = game.players.find(p => p.userId !== userId).userId;
+                game.state = GameState.ENDED;
+                await game.save();
+        }
+
+        if (game.players.length - 1 === 0) {
+            await game.destroy();
+        }
     }
 
     static async performAction(userId: number, gameId: number, payload: IActionPayload): Promise<void> {

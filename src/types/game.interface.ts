@@ -3,6 +3,7 @@ import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 
 export enum GameState {
+    CANCELLED = 'cancelled',
     CREATED = 'created',
     ENDED = 'ended',
     SETUP = 'setup',

@@ -30,14 +30,18 @@ class GamesController {
         res.send(gameState);
     }
 
-    async join(_req: Request, _res: Response): Promise<void> {
-        // const response = null;
-        // res.send(response);
+    async join(req: Request, res: Response): Promise<void> {
+        const userId = req.userId;
+        const gameId = req.params.id;
+        await GameService.join(userId, parseInt(gameId, 10));
+        res.send();
     }
 
-    async leave(_req: Request, _res: Response): Promise<void> {
-        // const response = null;
-        // res.send(response);
+    async leave(req: Request, res: Response): Promise<void> {
+        const userId = req.userId;
+        const gameId = req.params.id;
+        await GameService.leave(userId, parseInt(gameId, 10));
+        res.send();
     }
 
     async performAction(req: IActionRequest, res: Response): Promise<void> {
