@@ -266,6 +266,13 @@ class GameService {
                 }
             }
         );
+
+        const activeGames = await this.getActiveGames();
+
+        EventService.emitEvent({
+            type: EventType.ACTIVE_GAMES_UPDATE,
+            payload: activeGames
+        });
     }
 
 }

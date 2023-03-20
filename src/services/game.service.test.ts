@@ -330,6 +330,23 @@ describe('GameService', () => {
             expect(updatedGame.codexColor).toBe(lastCard.type.color);
         });
 
+        it('should emit an \'update active games\' websocket event', async () => {
+            await GameService.start(userA.id, game.id);
+
+            const activeGames = await GameService.getActiveGames();
+
+            const emitEventSpy = jest.spyOn(EventService, 'emitEvent');
+
+            expect(emitEventSpy).toHaveBeenCalledWith({
+                type: EventType.ACTIVE_GAMES_UPDATE,
+                payload: activeGames
+            });
+        });
+
+        afterAll(async () => {
+            await Game.truncate();
+        });
+
     });
 
 });

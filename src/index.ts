@@ -47,5 +47,9 @@ gameSocket.on('connection', (socket: Socket) => {
     socket.on(EventType.JOIN_GAME, (gameId: number) => {
         socket.join(`game-${gameId}`);
     });
+
+    socket.on(EventType.LEAVE_GAME, (gameId: number) => {
+        socket.leave(`game-${gameId}`);
+    });
 });
 
