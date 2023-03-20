@@ -9,4 +9,5 @@ export interface IPlayer {
     gameId: number;
     position: number;
     points: number;
+    orientation: PlayerOrientation;
 }

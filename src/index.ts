@@ -25,14 +25,14 @@ app.get('/user', UsersController.getDetails);
 app.patch('/user', UsersController.update);
 app.delete('/user', UsersController.delete);
 
-app.post('/game', GamesController.create);
+app.get('/game/all', GamesController.getActiveGames);
+app.get('/game/:id/actions', GamesController.getActions);
 app.post('/game/:id/start', GamesController.start);
 app.post('/game/:id/join', GamesController.join);
 app.post('/game/:id/action', GamesController.handleAction);
 app.post('/game/:id/leave', GamesController.leave);
 app.get('/game/:id', GamesController.getState);
-app.get('/game/all', GamesController.getActiveGames);
-app.get('/game/:id/actions', GamesController.getActions);
+app.post('/game', GamesController.create);
 
 export const gameSocket = process.env.NODE_ENV === 'production' ? io.of('websocket') : io;
 

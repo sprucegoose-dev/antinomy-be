@@ -17,10 +17,11 @@ import {
 import PlayerService from './player.service';
 import EventService from './event.service';
 import { EventType } from '../types/event.interface';
+import { User } from '../models/user.model';
 
 class GameService {
 
-    static async create(userId: number): Promise<Game> {
+    static async create(userId: number): Promise<IGameState> {
         if (await this.hasActiveGames(userId)) {
             throw new CustomException(ERROR_BAD_REQUEST, 'Please leave your other active game(s) before creating a new one.');
         }
@@ -37,7 +38,7 @@ class GameService {
             payload: activeGames
         });
 
-        return game;
+        return await this.getState(game.id);
     }
 
     static async getActiveGames(): Promise<Omit<IGameState, 'cards'>[]> {
@@ -51,6 +52,16 @@ class GameService {
                 {
                     model: Player,
                     as: 'players',
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: [
+                                'id',
+                                'username',
+                            ],
+                        }
+                    ],
                 },
             ]
         });

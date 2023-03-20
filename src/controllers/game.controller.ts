@@ -20,18 +20,18 @@ class GamesController {
     async getActions(req: AuthRequest, res: Response): Promise<void> {
         const userId = req.userId;
         const gameId = req.params.id;
-        const actions = ActionService.getActions(userId, parseInt(gameId, 10));
+        const actions = await ActionService.getActions(userId, parseInt(gameId, 10));
         res.send(actions);
     }
 
     async getActiveGames(_req: Request, res: Response): Promise<void> {
-        const activeGames = GameService.getActiveGames();
+        const activeGames = await GameService.getActiveGames();
         res.send(activeGames);
     }
 
     async getState(req: AuthRequest, res: Response): Promise<void> {
         const gameId = req.params.id;
-        const gameState = GameService.getState(parseInt(gameId, 10));
+        const gameState = await GameService.getState(parseInt(gameId, 10));
         res.send(gameState);
     }
 
@@ -60,7 +60,7 @@ class GamesController {
     async start(req: AuthRequest, res: Response): Promise<void> {
         const userId = req.userId;
         const gameId = req.params.id;
-        GameService.start(userId, parseInt(gameId, 10));
+        await GameService.start(userId, parseInt(gameId, 10));
         res.send();
     }
 }

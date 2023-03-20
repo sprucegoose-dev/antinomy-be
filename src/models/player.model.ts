@@ -41,8 +41,8 @@ export class Player extends Model {
     points: number;
 
     @BelongsTo(() => Game, 'gameId')
-    game: Game
+    game: Game;
 
     @BelongsTo(() => User, 'userId')
-    user: User
+    user: User;
 }
