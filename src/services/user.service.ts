@@ -8,10 +8,11 @@ import {
     ERROR_UNAUTHORIZED,
 } from '../helpers/exception_handler';
 import { User } from '../models/user.model';
+import { ISignUpRequest } from '../types/user.interface';
 
 class UserService {
 
-    static async create(payload: any): Promise<User> {
+    static async create(payload: ISignUpRequest): Promise<User> {
         const {
             username,
             email,

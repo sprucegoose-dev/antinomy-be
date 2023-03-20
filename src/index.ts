@@ -5,6 +5,7 @@ import GamesController from './controllers/game.controller';
 import AuthMiddleware from './middleware/auth.middleware';
 import { IGameState } from './types/game.interface';
 import { EventType } from './types/event.interface';
+import '../database/connection';
 
 const express = require('express');
 const app = require('express')();
@@ -13,9 +14,9 @@ const io = require('socket.io')(http);
 const cors = require('cors');
 
 app.use(express.static('public'));
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 app.use(AuthMiddleware.isAuthenticated);
 
 app.post('/user/signUp', UsersController.create);

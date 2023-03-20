@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { sequelize } from './database/connection';
+import sequelize from './database/connection';
 
 const glob = require('glob');
 const path = require('path');
