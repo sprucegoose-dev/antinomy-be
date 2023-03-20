@@ -6,6 +6,7 @@ import {
     ERROR_UNAUTHORIZED,
 } from '../helpers/exception_handler';
 import { User } from '../models/user.model';
+import { PASSWORD_MIN_CHARS, USERNAME_MIN_CHARS } from '../types/user.interface';
 import UserService from './user.service';
 
 describe('UserService', () => {
@@ -170,6 +171,50 @@ describe('UserService', () => {
             const existingUser = await UserService.getOne(newUser.id);
             expect(moment(existingUser.sessionExp).isAfter(newUser.sessionExp)).toBe(true);
         });
+
+    });
+
+    describe('validateUserRequest', () => {
+
+        it('should throw an error if the provided email is invalid', async () => {
+            const payload = {
+                username: 'SpruceGoose',
+                email: 'invalid-email',
+                password: 'valid.password',
+            };
+            try {
+                UserService.validateUserRequest(payload);
+            } catch (error: any) {
+                expect(error.message).toBe('Invalid email');
+            }
+        });
+
+        it(`should throw an error if the provided password is less than ${PASSWORD_MIN_CHARS} characters`, async () => {
+            const payload = {
+                username: 'SpruceGoose',
+                email: 'valid-email@gmail.com',
+                password: 'pwd',
+            };
+            try {
+                UserService.validateUserRequest(payload);
+            } catch (error: any) {
+                expect(error.message).toBe(`Password must be at least ${PASSWORD_MIN_CHARS} characters`);
+            }
+        });
+
+        it(`should throw an error if the provided username is less than ${USERNAME_MIN_CHARS} characters`, async () => {
+            const payload = {
+                username: 'sg',
+                email: 'valid-email@gmail.com',
+                password: 'valid.password',
+            };
+            try {
+                UserService.validateUserRequest(payload);
+            } catch (error: any) {
+                expect(error.message).toBe(`Username must be at least ${USERNAME_MIN_CHARS} characters`);
+            }
+        });
+
 
     });
 

@@ -4,20 +4,27 @@ import { v4 as uuid } from 'uuid';
 
 import {
     CustomException,
+    ERROR_BAD_REQUEST,
     ERROR_NOT_FOUND,
     ERROR_UNAUTHORIZED,
 } from '../helpers/exception_handler';
 import { User } from '../models/user.model';
-import { ISignUpRequest } from '../types/user.interface';
+import {
+    IUserRequest,
+    PASSWORD_MIN_CHARS,
+    USERNAME_MIN_CHARS,
+} from '../types/user.interface';
 
 class UserService {
 
-    static async create(payload: ISignUpRequest): Promise<User> {
+    static async create(payload: IUserRequest): Promise<User> {
         const {
             username,
             email,
             password,
         } = payload;
+
+        this.validateUserRequest(payload);
 
         const sessionId = uuid();
         const sessionExp = moment().add(7, 'days').format('YYYY-MM-DD HH:mm:ss');
@@ -56,12 +63,14 @@ class UserService {
         };
     }
 
-    static async update(userId: number, payload: any): Promise<User> {
+    static async update(userId: number, payload: IUserRequest): Promise<User> {
         const {
             username,
             email,
             password,
         } = payload;
+
+        this.validateUserRequest(payload);
 
         await User.update({
             username,
@@ -118,6 +127,20 @@ class UserService {
         const user = await this.findBySessionId(sessionId, false);
         user.sessionExp = moment().add(7, 'days').format('YYYY-MM-DD HH:mm:ss');
         await user.save();
+    }
+
+    static validateUserRequest(payload: IUserRequest): void {
+        if (!/[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}/i.test(payload.email)) {
+            throw new CustomException(ERROR_BAD_REQUEST, 'Invalid email');
+        }
+
+        if (payload.password.length < PASSWORD_MIN_CHARS) {
+            throw new CustomException(ERROR_BAD_REQUEST, `Password must be at least ${PASSWORD_MIN_CHARS} characters`);
+        }
+
+        if (payload.username.length < USERNAME_MIN_CHARS) {
+            throw new CustomException(ERROR_BAD_REQUEST, `Username must be at least ${USERNAME_MIN_CHARS} characters`);
+        }
     }
 
 };
