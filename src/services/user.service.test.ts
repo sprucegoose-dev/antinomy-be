@@ -4,7 +4,7 @@ import moment from 'moment';
 import {
     ERROR_NOT_FOUND,
     ERROR_UNAUTHORIZED,
-} from '../helpers/ExceptionHandler';
+} from '../helpers/exception_handler';
 import { User } from '../models/user.model';
 import UserService from './user.service';
 

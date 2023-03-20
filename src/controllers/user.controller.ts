@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import User from '../services/user.service';
-import { exceptionHandler } from '../helpers/ExceptionHandler-decorator';
+import { exceptionHandler } from '../helpers/exception_handler.decorator';
 
 @exceptionHandler()
 class UsersController {

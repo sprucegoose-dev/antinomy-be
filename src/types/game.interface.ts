@@ -1,8 +1,6 @@
 import { Card } from '../models/card.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
-import { ICard } from './card.interface';
-import { Color } from './card_type.interface';
 
 export enum GameState {
     CREATED = 'created',
@@ -18,14 +16,9 @@ export enum GamePhase {
     REPLACEMENT = 'replacement',
 }
 
-export interface IGameState {
-    activePlayerId: number;
-    winnerId: number;
-    cards: ICard[];
-    codexColor: Color;
-    points: number;
-    state: GameState;
-    phase: GamePhase;
+export interface IGameState extends Game {
+    cards: Card[];
+    players: Player[];
 }
 
 export interface ICombatData {

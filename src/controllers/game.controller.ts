@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { exceptionHandler } from '../helpers/ExceptionHandler-decorator';
+import { exceptionHandler } from '../helpers/exception_handler.decorator';
 import GameService from '../services/game.service';
 import { IActionRequest } from '../types/action.interface';
 
@@ -12,14 +12,30 @@ class GamesController {
         res.send();
     }
 
-    async start(req: Request, res: Response): Promise<void> {
+    async getActions(req: Request, res: Response): Promise<void> {
         const userId = req.userId;
         const gameId = req.params.id;
-        GameService.start(userId, parseInt(gameId, 10));
-        res.send();
+        const actions = GameService.getActions(userId, parseInt(gameId, 10));
+        res.send(actions);
+    }
+
+    async getActiveGames(_req: Request, res: Response): Promise<void> {
+        const activeGames = GameService.getActiveGames();
+        res.send(activeGames);
+    }
+
+    async getState(req: Request, res: Response): Promise<void> {
+        const gameId = req.params.id;
+        const gameState = GameService.getState(parseInt(gameId, 10));
+        res.send(gameState);
     }
 
     async join(_req: Request, _res: Response): Promise<void> {
+        // const response = null;
+        // res.send(response);
+    }
+
+    async leave(_req: Request, _res: Response): Promise<void> {
         // const response = null;
         // res.send(response);
     }
@@ -32,24 +48,11 @@ class GamesController {
         res.send();
     }
 
-    async leave(_req: Request, _res: Response): Promise<void> {
-        // const response = null;
-        // res.send(response);
-    }
-
-    async getState(_req: Request, _res: Response): Promise<void> {
-        // const response = null;
-        // res.send(response);
-    }
-
-    async getActiveGames(_req: Request, _res: Response): Promise<void> {
-        // const response = null;
-        // res.send(response);
-    }
-
-    async getActions(_req: Request, _res: Response): Promise<void> {
-        // const response = null;
-        // res.send(response);
+    async start(req: Request, res: Response): Promise<void> {
+        const userId = req.userId;
+        const gameId = req.params.id;
+        GameService.start(userId, parseInt(gameId, 10));
+        res.send();
     }
 }
 

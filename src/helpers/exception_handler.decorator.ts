@@ -1,4 +1,4 @@
-import ExceptionHandler from './ExceptionHandler';
+import ExceptionHandler from './exception_handler';
 
 export function exceptionHandler() {
     return (target: any) => {

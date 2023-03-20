@@ -6,7 +6,7 @@ import {
     CustomException,
     ERROR_NOT_FOUND,
     ERROR_UNAUTHORIZED,
-} from '../helpers/ExceptionHandler';
+} from '../helpers/exception_handler';
 import { User } from '../models/user.model';
 
 class UserService {

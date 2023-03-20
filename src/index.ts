@@ -1,7 +1,7 @@
 
 import UsersController from './controllers/user.controller';
 import GamesController from './controllers/game.controller';
-import AuthMiddleware from './middleware/AuthMiddleware';
+import AuthMiddleware from './middleware/auth.middleware';
 
 const express = require('express');
 const app = require('express')();
