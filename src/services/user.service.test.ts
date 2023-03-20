@@ -43,7 +43,14 @@ describe('UserService', () => {
                 email: 'spruce.goose@gmail.com',
                 password: 'landed.on.the.moon!',
             }
-            const updatedUser = await UserService.update(user.id, updatedData);
+            await UserService.update(user.id, updatedData);
+
+            const updatedUser = await User.unscoped().findOne({
+                where: {
+                    id: user.id
+                }
+            });
+
             expect(updatedUser.username).toBe(updatedData.username);
             expect(updatedUser.email).toBe(updatedData.email);
             expect(await bcrypt.compare(updatedData.password, updatedUser.password)).toBe(true);

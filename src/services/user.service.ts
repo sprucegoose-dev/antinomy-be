@@ -33,7 +33,7 @@ class UserService {
     }
 
     static async login(email: string, password: string): Promise<any> {
-        const user = await User.findOne({ where: { email }});
+        const user = await User.unscoped().findOne({ where: { email }});
 
         if (!user) {
             throw new CustomException(ERROR_NOT_FOUND, 'The provided email does not exist');
