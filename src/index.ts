@@ -18,11 +18,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(AuthMiddleware.isAuthenticated);
 
-app.post('/user', UsersController.create);
+app.post('/user/signUp', UsersController.create);
 app.post('/user/login', UsersController.login);
-app.get('/user/:id', UsersController.getOne);
-app.patch('/user/:id', UsersController.update);
-app.delete('/user/:id', UsersController.delete);
+app.get('/user', UsersController.getDetails);
+app.patch('/user', UsersController.update);
+app.delete('/user', UsersController.delete);
 
 app.post('/game', GamesController.create);
 app.post('/game/:id/start', GamesController.start);

@@ -1,4 +1,4 @@
-import { Request } from "express";
+import { AuthRequest } from "./index.interface";
 
 export enum ActionType {
     MOVE = 'move',
@@ -12,6 +12,6 @@ export interface IActionPayload {
     type: ActionType;
 }
 
-export interface IActionRequest extends Request {
+export interface IActionRequest extends AuthRequest {
     body: IActionPayload;
 }

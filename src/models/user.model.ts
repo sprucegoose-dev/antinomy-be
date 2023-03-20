@@ -8,6 +8,11 @@ import {
 
 @Table({
     timestamps: true,
+    defaultScope: {
+        attributes: {
+            exclude: ['password'],
+        },
+    },
 })
 export class User extends Model {
 

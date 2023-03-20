@@ -1,5 +1,5 @@
 
-export function generateCardTypes() {
+function generateCardTypes() {
     const cardTypes = [];
     const suits = [
         'key',
@@ -39,7 +39,7 @@ export function generateCardTypes() {
     return cardTypes.sort((a, b) => a.value - b.value);
 }
 
-export function generateCardType({
+function generateCardType({
     color,
     suit,
     value,
@@ -50,3 +50,7 @@ export function generateCardType({
         value,
     };
 }
+
+module.exports = {
+    generateCardTypes,
+};

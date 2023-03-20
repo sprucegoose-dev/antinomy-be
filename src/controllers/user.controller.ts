@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import User from '../services/user.service';
 import { exceptionHandler } from '../helpers/exception_handler.decorator';
+import { AuthRequest } from '../types/index.interface';
 
 @exceptionHandler()
 class UsersController {
@@ -16,18 +17,18 @@ class UsersController {
         res.send(response);
     }
 
-    async update(req: Request, res: Response): Promise<void> {
-        const response = await User.update(parseInt(req.params.id, 10), req.body);
+    async update(req: AuthRequest, res: Response): Promise<void> {
+        const response = await User.update(req.userId, req.body);
         res.send(response);
     }
 
-    async delete(req: Request, res: Response): Promise<void> {
-        const response = await User.delete(parseInt(req.params.id, 10));
+    async delete(req: AuthRequest, res: Response): Promise<void> {
+        const response = await User.delete(req.userId);
         res.send(response);
     }
 
-    async getOne(req: Request, res: Response): Promise<void> {
-        const response = await User.getOne(parseInt(req.params.id, 10));
+    async getDetails(req: AuthRequest, res: Response): Promise<void> {
+        const response = await User.getOne(req.userId);
         res.send(response);
     }
 }
