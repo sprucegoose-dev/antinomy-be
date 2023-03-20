@@ -4,6 +4,7 @@ import UsersController from './controllers/user.controller';
 import GamesController from './controllers/game.controller';
 import AuthMiddleware from './middleware/auth.middleware';
 import { IGameState } from './types/game.interface';
+import { EventType } from './types/event.interface';
 
 const express = require('express');
 const app = require('express')();
@@ -26,7 +27,7 @@ app.delete('/user/:id', UsersController.delete);
 app.post('/game', GamesController.create);
 app.post('/game/:id/start', GamesController.start);
 app.post('/game/:id/join', GamesController.join);
-app.post('/game/:id/action', GamesController.performAction);
+app.post('/game/:id/action', GamesController.handleAction);
 app.post('/game/:id/leave', GamesController.leave);
 app.get('/game/:id', GamesController.getState);
 app.get('/game/all', GamesController.getActiveGames);
@@ -36,15 +37,15 @@ export const gameSocket = process.env.NODE_ENV === 'production' ? io.of('websock
 
 gameSocket.on('connection', (socket: Socket) => {
 
-    socket.on('joinGameChannel', (gameId: number) => {
+    socket.on(EventType.JOIN_GAME, (gameId: number) => {
         socket.join(`game-${gameId}`);
     });
 
-    socket.on('onUpdateGameState',  async (gameState: IGameState) => {
+    socket.on(EventType.GAME_UPDATE,  async (gameState: IGameState) => {
         gameSocket.to(`game-${gameState.id}`).emit('updateGameState', gameState);
     });
 
-    socket.on('onUpdateActiveGames', async (activeGames: Omit<IGameState, 'cards'>[]) => {
+    socket.on(EventType.ACTIVE_GAMES_UPDATE, async (activeGames: Omit<IGameState, 'cards'>[]) => {
         gameSocket.emit('updateActiveGames', activeGames);
     });
 

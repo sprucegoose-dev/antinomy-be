@@ -1,13 +1,13 @@
 import { Op } from 'sequelize';
+import { ERROR_BAD_REQUEST } from '../helpers/exception_handler';
 import { Card } from '../models/card.model';
 import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { User } from '../models/user.model';
-import { ActionType, IActionPayload } from '../types/action.interface';
-import { Color, Suit } from '../types/card_type.interface';
+import { EventType } from '../types/event.interface';
 import { GameState } from '../types/game.interface';
-import CardService from './card.service';
+import EventService from './event.service';
 import GameService from './game.service';
 import PlayerService from './player.service';
 import UserService from './user.service';
@@ -23,450 +23,213 @@ describe('GameService', () => {
         email: 'violet.tide@gmail.com',
         password: 'animaniacs',
     };
+    const userDataC = {
+        username: 'Milky',
+        email: 'milky.fury@yahoo.com',
+        password: 'smoothie',
+    };
     let userA: User;
     let userB: User;
+    let userC: User;
 
     beforeAll(async () => {
         userA = await UserService.create(userDataA);
         userB = await UserService.create(userDataB);
+        userC = await UserService.create(userDataC);
     });
 
-    describe('hasSet', () => {
+    describe('create', () => {
 
-        it('should return \'true\' if 3 cards have the same color, which isn\'t the Codex color', async () => {
-            const cardTypes = await CardType.findAll({
-                where: {
-                    color: Color.RED,
-                },
-                limit: 3,
-            });
-
-            const cards = [];
-
-            for (const cardType of cardTypes) {
-                const card = await CardService.create({
-                    cardTypeId: cardType.id,
-                });
-
-                cards.push(card);
-            }
-
-            expect(GameService.hasSet(cards, Color.BLUE)).toBe(true);
+        beforeEach(async () => {
+            await Game.truncate();
         });
 
-        it('should return \'true\' if 3 cards have the same suit, and none have the Codex color', async () => {
-            const cardTypes = await CardType.findAll({
+        it('should create a new game', async () => {
+            const newGame = await GameService.create(userA.id);
+
+            const existingGame = await Game.findOne({
                 where: {
-                    suit: Suit.SKULL,
-                    color: {
-                        [Op.not]: Color.BLUE,
-                    },
-                },
-                limit: 3,
+                    id: newGame.id,
+                }
             });
 
-            const cards = [];
-
-            for (const cardType of cardTypes) {
-                const card = await CardService.create({
-                    cardTypeId: cardType.id,
-                });
-
-                cards.push(card);
-            }
-
-            expect(GameService.hasSet(cards, Color.BLUE)).toBe(true);
+            expect(existingGame.creatorId).toBe(userA.id);
+            expect(existingGame.state).toBe(GameState.CREATED);
         });
 
-        it('should return \'true\' if 3 cards have the same number, and none have the Codex color', async () => {
-            const cardTypes = await CardType.findAll({
-                where: {
-                    value: 3,
-                    color: {
-                        [Op.not]: Color.BLUE,
-                    },
-                },
-                limit: 3,
+        it('should emit an \'update active games\' websocket event', async () => {
+            await GameService.create(userA.id);
+
+            const activeGames = await GameService.getActiveGames();
+
+            const emitEventSpy = jest.spyOn(EventService, 'emitEvent');
+
+            expect(emitEventSpy).toHaveBeenCalledWith({
+                type: EventType.ACTIVE_GAMES_UPDATE,
+                payload: activeGames
             });
-
-            const cards = [];
-
-            for (const cardType of cardTypes) {
-                const card = await CardService.create({
-                    cardTypeId: cardType.id,
-                });
-
-                cards.push(card);
-            }
-
-            expect(GameService.hasSet(cards, Color.BLUE)).toBe(true);
         });
 
-        it('should return \'false\' if 3 cards have the same color, but it\'s the Codex color', async () => {
-            const cardTypes = await CardType.findAll({
-                where: {
-                    color: Color.RED,
-                },
-                limit: 3,
-            });
-
-            const cards = [];
-
-            for (const cardType of cardTypes) {
-                const card = await CardService.create({
-                    cardTypeId: cardType.id,
-                });
-
-                cards.push(card);
-            }
-
-            expect(GameService.hasSet(cards, Color.RED)).toBe(false);
-        });
-
-        it('should return \'false\' if 3 cards have the same suit, but at least one is the Codex color', async () => {
-            const cardTypes = await CardType.findAll({
-                where: {
-                    suit: Suit.FEATHER,
-                    color: {
-                        [Op.in]: [
-                            Color.RED,
-                            Color.BLUE,
-                            Color.GREEN,
-                        ]
-                    }
-                },
-                limit: 3,
-            });
-
-            const cards = [];
-
-            for (const cardType of cardTypes) {
-                const card = await CardService.create({
-                    cardTypeId: cardType.id,
-                });
-
-                cards.push(card);
-            }
-
-            expect(GameService.hasSet(cards, Color.RED)).toBe(false);
-        });
-
-        it('should return \'false\' if 3 cards have the same number, but at least one is the Codex color', async () => {
-            const cardTypes = await CardType.findAll({
-                where: {
-                    value: 2,
-                    color: {
-                        [Op.in]: [
-                            Color.RED,
-                            Color.BLUE,
-                            Color.GREEN,
-                        ]
-                    }
-                },
-                limit: 3,
-            });
-
-            const cards = [];
-
-            for (const cardType of cardTypes) {
-                const card = await CardService.create({
-                    cardTypeId: cardType.id,
-                });
-
-                cards.push(card);
-            }
-
-            expect(GameService.hasSet(cards, Color.RED)).toBe(false);
+        afterAll(async () => {
+            await Game.truncate();
         });
 
     });
 
-    describe('Actions', () => {
-        let game: Game;
-        let playerA: Player;
-        let playerB: Player;
+    describe('leave', () => {
 
-        beforeAll(async () => {
-            game = await GameService.create(userA.id);
-            playerA = await PlayerService.create({
-                userId: userA.id,
-                gameId: game.id,
+        it('should delete the game if the creator has left before the game started and the room is empty', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+
+            await GameService.leave(userA.id, newGame.id);
+
+            const existingGame = await Game.findOne({
+                where: {
+                    id: newGame.id,
+                }
             });
-            playerB = await PlayerService.create({
-                userId: userB.id,
-                gameId: game.id,
+
+            expect(existingGame).toBe(null);
+        });
+
+        it('should cancel the game if the creator has left before the game started and there is another player in the room', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+            await PlayerService.create(userB.id, newGame.id);
+
+            await GameService.leave(userA.id, newGame.id);
+
+            const existingGame = await Game.findOne({
+                where: {
+                    id: newGame.id,
+                }
+            });
+
+            expect(existingGame.state).toBe(GameState.CANCELLED);
+        });
+
+
+        it('should prevent leaving the game if it has already ended', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+            await PlayerService.create(userB.id, newGame.id);
+
+            await Game.update({
+                state: GameState.ENDED,
+            }, {
+                where: {
+                    id: newGame.id
+                }
+            });
+
+            try {
+                await GameService.leave(userA.id, newGame.id);
+
+            } catch (error: any) {
+                expect(error.type).toBe(ERROR_BAD_REQUEST);
+
+            }
+        });
+
+        it('should end the game if it had already started and set the other player as winner', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+            await PlayerService.create(userB.id, newGame.id);
+
+            await Game.update({
+                state: GameState.STARTED,
+            }, {
+                where: {
+                    id: newGame.id
+                }
+            });
+
+            await GameService.leave(userA.id, newGame.id);
+
+            const updatedGame = await Game.findOne({
+                where: {
+                    id: newGame.id
+                }
+            });
+
+            expect(updatedGame.state).toBe(GameState.ENDED);
+            expect(updatedGame.winnerId).toBe(userB.id);
+        });
+
+        it('should emit an \'update active games\' websocket event', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+            await PlayerService.create(userB.id, newGame.id);
+
+            await GameService.leave(userA.id, newGame.id);
+
+            const activeGames = await GameService.getActiveGames();
+
+            const emitEventSpy = jest.spyOn(EventService, 'emitEvent');
+
+            expect(emitEventSpy).toHaveBeenCalledWith({
+                type: EventType.ACTIVE_GAMES_UPDATE,
+                payload: activeGames
             });
         });
 
-        describe('handleDeploy', () => {
-
-            it('should update player\'s position', async () => {
-                const actionPayload: IActionPayload = {
-                    targetIndex: 4,
-                    type: ActionType.DEPLOY,
-                };
-
-                await GameService.handleDeploy(playerA, actionPayload);
-
-                const updatedPlayer = await Player.findOne({
-                    where: {
-                        id: playerA.id,
-                    }
-                });
-
-                expect(updatedPlayer.position).toBe(actionPayload.targetIndex);
-            });
-
-            it(`should update the game state from ${GameState.SETUP} to ${GameState.STARTED} when both players have positions`, async () => {
-                const actionPayload: IActionPayload = {
-                    targetIndex: 5,
-                    type: ActionType.DEPLOY,
-                };
-
-                await GameService.handleDeploy(playerB, actionPayload);
-
-                const updatedGame = await Game.findOne({
-                    where: {
-                        id: game.id,
-                    }
-                });
-
-                expect(updatedGame.state).toBe(GameState.STARTED);
-
-            });
-
+        afterAll(async () => {
+            await Game.truncate();
         });
 
-        describe('handleReplace', () => {
+    });
 
-            afterEach(async () => {
-                await Card.truncate();
-            });
+    describe('join', () => {
 
-            it('should place 3 cards from the player\'s instead of 3 cards in the continuum (lower index)', async () => {
-                await GameService.start(userA.id, game.id);
-
-                const playerCards = await Card.findAll({
-                    where: {
-                        playerId: playerA.id,
-                    }
-                });
-
-                const playerCardIds = playerCards.map(c => c.id);
-
-                const actionPayload: IActionPayload = {
-                    targetIndex: 6,
-                    type: ActionType.REPLACE,
-                };
-
-                playerA.position = 5;
-
-                await GameService.handleReplace(playerA, actionPayload);
-
-                const updatedContinuumCards = await Card.findAll({
-                    where: {
-                        gameId: game.id,
-                        index: {
-                            [Op.in]: [6, 7, 8]
-                        }
-                    }
-                });
-
-
-                const updatedContinuumCardIds = updatedContinuumCards.map(c => c.id);
-
-                expect(updatedContinuumCardIds).toEqual(playerCardIds);
-            });
-
-            it('should place 3 cards from the continuum into the player\'s hand', async () => {
-                await GameService.start(userA.id, game.id);
-
-
-                const cardsToPickUp = await Card.findAll({
-                    where: {
-                        gameId: game.id,
-                        index: {
-                            [Op.in]: [6, 7, 8]
-                        }
-                    }
-                });
-
-                const cardsToPickUpIds = cardsToPickUp.map(c => c.id);
-
-                const actionPayload: IActionPayload = {
-                    targetIndex: 6,
-                    type: ActionType.REPLACE,
-                };
-
-                playerA.position = 5;
-
-                await GameService.handleReplace(playerA, actionPayload);
-
-                const updatedPlayerCards = await Card.findAll({
-                    where: {
-                        index: null,
-                        playerId: playerA.id,
-                    }
-                });
-
-                const updatedPlayerCardIds = updatedPlayerCards.map(c => c.id);
-
-                expect(updatedPlayerCardIds).toEqual(cardsToPickUpIds);
-            });
-
-            it('should place 3 cards from the player\'s instead of 3 cards in the continuum (higher index)', async () => {
-                await GameService.start(userA.id, game.id);
-
-                const playerCards = await Card.findAll({
-                    where: {
-                        playerId: playerA.id,
-                    }
-                });
-
-                const playerCardIds = playerCards.map(c => c.id);
-
-                const actionPayload: IActionPayload = {
-                    targetIndex: 4,
-                    type: ActionType.REPLACE,
-                };
-
-                playerA.position = 5;
-
-                await GameService.handleReplace(playerA, actionPayload);
-
-                const updatedContinuumCards = await Card.findAll({
-                    where: {
-                        gameId: game.id,
-                        index: {
-                            [Op.in]: [1, 2, 3]
-                        }
-                    }
-                });
-
-                const updatedContinuumCardIds = updatedContinuumCards.map(c => c.id);
-
-                expect(updatedContinuumCardIds).toEqual(playerCardIds);
-            });
-
+        beforeEach(async () => {
+            await Game.truncate();
         });
 
-        describe('handleMove', () => {
+        it('should assign the user as a player in the game', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+            await GameService.join(userB.id, newGame.id);
 
-            afterEach(async () => {
-                await Card.truncate();
+            const player = await Player.findOne({
+                where: {
+                    gameId: newGame.id,
+                    userId: userB.id,
+                }
             });
 
-            it('should update the player\'s position to the target index', async () => {
-                await GameService.start(userA.id, game.id);
+            expect(player).toBeDefined();
+        });
 
-                const playerCards = await await Card.findAll({
-                    where: {
-                        playerId: playerA.id,
-                    }
-                });
+        it('should throw an error if the user is already in another active game', async () => {
+            const newGame = await GameService.create(userA.id);
+            const newGame2 = await GameService.create(userA.id);
 
-                const actionPayload: IActionPayload = {
-                    sourceCardId: playerCards[0].id,
-                    targetIndex: 6,
-                    type: ActionType.MOVE,
-                };
+            await PlayerService.create(userA.id, newGame.id);
 
-                playerA.position = 5;
+            try {
+                await GameService.join(userA.id, newGame2.id);
+            } catch (error: any) {
+                expect(error.type).toBe(ERROR_BAD_REQUEST);
+                expect(error.message).toContain('Please leave');
+            }
+        });
 
-                await GameService.handleMove(playerA, actionPayload);
+        it('should throw an error if the game is already full', async () => {
+            const newGame = await GameService.create(userA.id);
+            await PlayerService.create(userA.id, newGame.id);
+            await PlayerService.create(userB.id, newGame.id);
 
-                const updatedPlayer = await Player.findOne({
-                    where: {
-                        id: playerA.id,
-                    }
-                });
+            try {
+                await GameService.join(userC.id, newGame.id);
+            } catch (error: any) {
+                expect(error.type).toBe(ERROR_BAD_REQUEST);
+                expect(error.message).toBe('This game is already full');
+            }
+        });
 
-                expect(updatedPlayer.position).toEqual(actionPayload.targetIndex);
-            });
-
-            it('should swap the player\'s card with a card from the continuum', async () => {
-                await GameService.start(userA.id, game.id);
-
-                const playerCards = await await Card.findAll({
-                    where: {
-                        playerId: playerA.id,
-                    }
-                });
-
-                const actionPayload: IActionPayload = {
-                    sourceCardId: playerCards[0].id,
-                    targetIndex: 6,
-                    type: ActionType.MOVE,
-                };
-
-                const targetCard = await Card.findOne({
-                    where: {
-                        gameId: game.id,
-                        index: actionPayload.targetIndex,
-                    }
-                });
-
-                playerA.position = 5;
-
-                await GameService.handleMove(playerA, actionPayload);
-
-
-                const updatedPlayerCard = await Card.findAll({
-                    where: {
-                        playerId: playerA.id,
-                        id: targetCard.id,
-                    }
-                });
-
-                const updatedContinuumCard = await Card.findOne({
-                    where: {
-                        gameId: game.id,
-                        index: actionPayload.targetIndex,
-                    }
-                });
-
-                expect(updatedPlayerCard).toBeDefined();
-                expect(updatedContinuumCard.id).toBe(actionPayload.sourceCardId);
-            });
-
-            it('should advance the codex color if the player has formed a set (i.e. \'paradox\')', async () => {
-                await GameService.start(userA.id, game.id);
-
-                const currentGame = await Game.findOne({
-                    where: {
-                        id: game.id,
-                    }
-                });
-
-                const playerCards = await await Card.findAll({
-                    where: {
-                        playerId: playerA.id,
-                    }
-                });
-
-                const hasSetSpy = jest.spyOn(GameService, 'hasSet');
-
-                hasSetSpy.mockReturnValueOnce(true);
-
-                const actionPayload: IActionPayload = {
-                    sourceCardId: playerCards[0].id,
-                    targetIndex: 6,
-                    type: ActionType.MOVE,
-                };
-
-                playerA.position = 5;
-
-                await GameService.handleMove(playerA, actionPayload);
-
-                const updatedGame = await Game.findOne({
-                    where: {
-                        id: game.id,
-                    }
-                });
-
-                expect(updatedGame.codexColor).toBe(GameService.getNextCodeColor(currentGame.codexColor));
-            });
-
+        afterAll(async () => {
+            await Game.truncate();
         });
 
     });
@@ -478,18 +241,16 @@ describe('GameService', () => {
 
         beforeAll(async () => {
             game = await GameService.create(userA.id);
-            playerA = await PlayerService.create({
-                userId: userA.id,
-                gameId: game.id,
-            });
-            playerB = await PlayerService.create({
-                userId: userB.id,
-                gameId: game.id,
-            });
+            playerA = await PlayerService.create(userA.id, game.id);
+            playerB = await PlayerService.create(userB.id, game.id);
         });
 
         afterEach(async () => {
             await Card.truncate();
+        });
+
+        afterAll(async () => {
+            await Game.truncate();
         });
 
         it('should deal 9 continuum cards', async () => {
@@ -567,188 +328,6 @@ describe('GameService', () => {
             });
 
             expect(updatedGame.codexColor).toBe(lastCard.type.color);
-        });
-
-    });
-
-    describe('resolveCombat', () => {
-        let game: Game;
-        let playerA: Player;
-        let playerB: Player;
-        let resolveParadoxSpy: any;
-
-        beforeAll(async () => {
-            game = await GameService.create(userA.id);
-            playerA = await PlayerService.create({
-                userId: userA.id,
-                gameId: game.id,
-            });
-            playerB = await PlayerService.create({
-                userId: userB.id,
-                gameId: game.id,
-            });
-
-            await GameService.start(userA.id, game.id);
-
-            resolveParadoxSpy = jest.spyOn(GameService, 'resolveParadox');
-        });
-
-        afterEach(() => {
-            jest.clearAllMocks();
-        });
-
-        it('should call GameService.resolveParadox if there is a winner and the loser has points to lose', async () => {
-            let cards = await Card.findAll({
-                where: {
-                    gameId: game.id,
-                },
-                include: [CardType]
-            });
-
-            game.codexColor = Color.RED;
-
-            cards = cards.map(c => c.toJSON());
-
-            const mockPlayerCards = cards.filter(c =>
-                [3 ,4].includes(c.type.value) && c.type.color !== game.codexColor
-            ).slice(0, 3);
-
-            const mockOpponentCards = cards.filter(c =>
-                [1, 2].includes(c.type.value)
-            ).slice(0, 3);
-
-            playerA.points = 3;
-            playerB.points = 2;
-
-            await GameService.resolveCombat({
-                game,
-                player: playerA,
-                opponent: playerB,
-                playerCards: mockPlayerCards,
-                opponentCards: mockOpponentCards,
-            });
-
-            expect(resolveParadoxSpy).toHaveBeenCalledWith(game, playerA, playerB);
-        });
-
-        it('should call GameService.resolveParadox via the tiebreaker when applicable', async () => {
-            let cards = await Card.findAll({
-                where: {
-                    gameId: game.id,
-                },
-                include: [CardType]
-            });
-
-            game.codexColor = Color.RED;
-
-            cards = cards.map(c => c.toJSON());
-
-            // a single card with a value of 3
-            const mockPlayerCards = [
-                {
-                    ...cards[0],
-                    type: {
-                        ...cards[0].type,
-                        color: Color.BLUE,
-                        value: 3,
-                    }
-                }
-            ];
-
-            // Three cards with a value of 1
-            const mockOpponentCards = cards.filter(c =>
-                c.type.color !== game.codexColor
-            ).slice(0, 3).map(c => {
-                c.type.value = 1;
-                return c;
-            });
-
-            playerA.points = 3;
-            playerB.points = 2;
-
-            await GameService.resolveCombat({
-                game,
-                player: playerA,
-                opponent: playerB,
-                // @ts-ignore
-                playerCards: mockPlayerCards,
-                opponentCards: mockOpponentCards,
-            });
-
-            expect(resolveParadoxSpy).toHaveBeenCalledWith(game, playerA, playerB);
-        });
-
-        it('should NOT call GameService.resolveParadox when players are tied', async () => {
-            let cards = await Card.findAll({
-                where: {
-                    gameId: game.id,
-                },
-                include: [CardType]
-            });
-
-            game.codexColor = Color.RED;
-
-            cards = cards.map(c => c.toJSON());
-
-            const mockPlayerCards = cards.filter(c =>
-                c.type.color !== game.codexColor
-            ).slice(0, 3).map(c => {
-                c.type.value = 2;
-                return c;
-            });
-            const mockOpponentCards = cards.filter(c =>
-                c.type.color !== game.codexColor
-            ).slice(0, 3).map(c => {
-                c.type.value = 2;
-                return c;
-            });
-
-            playerA.points = 3;
-            playerB.points = 2;
-
-            await GameService.resolveCombat({
-                game,
-                player: playerA,
-                opponent: playerB,
-                playerCards: mockPlayerCards,
-                opponentCards: mockOpponentCards,
-            });
-
-            expect(resolveParadoxSpy).not.toHaveBeenCalled();
-        });
-
-        it('should NOT call GameService.resolveParadox if there is a winner and the loser has NO points', async () => {
-            let cards = await Card.findAll({
-                where: {
-                    gameId: game.id,
-                },
-                include: [CardType]
-            });
-
-            game.codexColor = Color.RED;
-
-            cards = cards.map(c => c.toJSON());
-
-            const mockPlayerCards = cards.filter(c =>
-                [3 ,4].includes(c.type.value) && c.type.color !== game.codexColor
-            ).slice(0, 3);
-
-            const mockOpponentCards = cards.filter(c =>
-                [1, 2].includes(c.type.value)
-            ).slice(0, 3);
-
-            playerA.points = 3;
-            playerB.points = 0;
-
-            await GameService.resolveCombat({
-                game,
-                player: playerA,
-                opponent: playerB,
-                playerCards: mockPlayerCards,
-                opponentCards: mockOpponentCards,
-            });
-
-            expect(resolveParadoxSpy).not.toHaveBeenCalledWith(game, playerA, playerB);
         });
 
     });

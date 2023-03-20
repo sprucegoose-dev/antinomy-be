@@ -1,12 +1,8 @@
 import { Player } from '../models/player.model';
-import { ICreatePlayer } from '../types/player.interface';
 
 class PlayerService {
 
-    static async create({
-        userId,
-        gameId,
-    }: ICreatePlayer): Promise<Player> {
+    static async create(userId: number, gameId: number): Promise<Player> {
         return await Player.create({
             userId,
             gameId,

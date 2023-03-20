@@ -31,13 +31,13 @@ export class Player extends Model {
     })
     gameId: number;
 
-    @Column
+    @Column({ defaultValue: null })
     orientation: PlayerOrientation;
 
-    @Column
+    @Column({ defaultValue: null })
     position: number;
 
-    @Column
+    @Column({ defaultValue: 0 })
     points: number;
 
     @BelongsTo(() => Game, 'gameId')

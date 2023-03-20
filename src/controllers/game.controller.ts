@@ -1,21 +1,25 @@
 import { Request, Response } from 'express';
 
 import { exceptionHandler } from '../helpers/exception_handler.decorator';
+import { ActionService } from '../services/action.service';
+import CommandService from '../services/command.service';
 import GameService from '../services/game.service';
+import PlayerService from '../services/player.service';
 import { IActionRequest } from '../types/action.interface';
 
 @exceptionHandler()
 class GamesController {
 
     async create(req: Request, res: Response): Promise<void> {
-        await GameService.create(req.userId);
-        res.send();
+        const game = await GameService.create(req.userId);
+        await PlayerService.create(req.userId, game.id);
+        res.send(game);
     }
 
     async getActions(req: Request, res: Response): Promise<void> {
         const userId = req.userId;
         const gameId = req.params.id;
-        const actions = GameService.getActions(userId, parseInt(gameId, 10));
+        const actions = ActionService.getActions(userId, parseInt(gameId, 10));
         res.send(actions);
     }
 
@@ -44,11 +48,11 @@ class GamesController {
         res.send();
     }
 
-    async performAction(req: IActionRequest, res: Response): Promise<void> {
+    async handleAction(req: IActionRequest, res: Response): Promise<void> {
         const userId = req.userId;
         const gameId = req.params.id;
         const paylod = req.body;
-        await GameService.performAction(userId, parseInt(gameId, 10), paylod);
+        await CommandService.handleAction(userId, parseInt(gameId, 10), paylod);
         res.send();
     }
 

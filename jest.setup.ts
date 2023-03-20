@@ -32,3 +32,8 @@ beforeAll(async () => {
     }
 });
 
+jest.mock('./src/services/event.service.ts', () => {
+    return {
+        emitEvent: jest.fn(),
+    }
+});

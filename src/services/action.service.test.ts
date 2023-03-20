@@ -30,14 +30,8 @@ describe('ActionService', () => {
         userA = await UserService.create(userDataA);
         userB = await UserService.create(userDataB);
         game = await GameService.create(userA.id);
-        playerA = await PlayerService.create({
-            userId: userA.id,
-            gameId: game.id,
-        });
-        await PlayerService.create({
-            userId: userB.id,
-            gameId: game.id,
-        });
+        playerA = await PlayerService.create(userA.id, game.id);
+        await PlayerService.create(userB.id, game.id);
         await GameService.start(userA.id, game.id);
     });
 

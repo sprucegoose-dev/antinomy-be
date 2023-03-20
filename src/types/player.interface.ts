@@ -3,11 +3,6 @@ export enum PlayerOrientation {
     BOTTOM = 'top',
 }
 
-export interface ICreatePlayer {
-    userId: number;
-    gameId: number;
-}
-
 export interface IPlayer {
     id: number;
     userId: number;

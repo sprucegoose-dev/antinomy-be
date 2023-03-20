@@ -2,9 +2,42 @@ import { Card } from '../models/card.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
+import { GamePhase } from '../types/game.interface';
 import { PlayerOrientation } from '../types/player.interface';
+import GameService from './game.service';
 
 export class ActionService {
+
+    static async getActions(userId: number, gameId: number): Promise<IActionPayload[]> {
+        const game = await GameService.getState(gameId);
+        let actions: IActionPayload[] = [];
+
+        const activePlayer = game.players.find(p =>
+            p.id === game.activePlayerId && p.userId === userId
+        );
+
+        if (!activePlayer) {
+            return actions;
+        }
+
+        const continiuumCards = game.cards.filter(c => c.index !== null);
+
+        const playerCards = game.cards.filter(c => c.playerId === activePlayer.id);
+
+        switch (game.phase) {
+            case GamePhase.DEPLOYMENT:
+                actions = ActionService.getDeployActions(game.codexColor, continiuumCards);
+                break;
+            case GamePhase.REPLACEMENT:
+                actions = ActionService.getReplaceActions(activePlayer, continiuumCards);
+                break;
+            case GamePhase.MOVEMENT:
+                actions = ActionService.getMoveActions(activePlayer, playerCards, continiuumCards);
+                break;
+        }
+
+        return actions;
+    }
 
     static getDeployActions(codexColor: Color, continuumCards: Card[]): IActionPayload[] {
         let actions: IActionPayload[] = [];
@@ -102,4 +135,5 @@ export class ActionService {
 
         return actions;
     }
+
 }
