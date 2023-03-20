@@ -18,13 +18,19 @@ import {
 } from '../helpers/exception_handler';
 import { ActionService } from './action.service';
 import PlayerService from './player.service';
+import { gameSocket } from '..';
 
 class GameService {
 
     static async create(userId: number): Promise<Game> {
-        return await Game.create({
+        const game = await Game.create({
             creatorId: userId,
         });
+
+        const activeGames = await this.getActiveGames();
+        gameSocket.emit('onUpdateActiveGames', activeGames);
+
+        return game;
     }
 
     static async handleDeploy(player: Player, payload: IActionPayload): Promise<void> {
@@ -315,6 +321,9 @@ class GameService {
         if (game.players.length - 1 === 0) {
             await game.destroy();
         }
+
+        const activeGames = await this.getActiveGames();
+        gameSocket.emit('onUpdateActiveGames', activeGames);
     }
 
     static async performAction(userId: number, gameId: number, payload: IActionPayload): Promise<void> {
@@ -355,6 +364,10 @@ class GameService {
                 await GameService.handleReplace(activePlayer, payload);
                 break;
         }
+
+        const updatedGameState = await this.getState(gameId);
+
+        gameSocket.to(`game-${gameId}`).emit('onUpdateGameState', updatedGameState);
     }
 
     static async resolveCombat({

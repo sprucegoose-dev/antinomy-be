@@ -1,11 +1,14 @@
+import { Socket } from 'socket.io';
 
 import UsersController from './controllers/user.controller';
 import GamesController from './controllers/game.controller';
 import AuthMiddleware from './middleware/auth.middleware';
+import { IGameState } from './types/game.interface';
 
 const express = require('express');
 const app = require('express')();
 const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 const cors = require('cors');
 
 app.use(express.static('public'));
@@ -29,6 +32,23 @@ app.get('/game/:id', GamesController.getState);
 app.get('/game/all', GamesController.getActiveGames);
 app.get('/game/:id/actions', GamesController.getActions);
 
+export const gameSocket = process.env.NODE_ENV === 'production' ? io.of('websocket') : io;
+
+gameSocket.on('connection', (socket: Socket) => {
+
+    socket.on('joinGameChannel', (gameId: number) => {
+        socket.join(`game-${gameId}`);
+    });
+
+    socket.on('onUpdateGameState',  async (gameState: IGameState) => {
+        gameSocket.to(`game-${gameState.id}`).emit('updateGameState', gameState);
+    });
+
+    socket.on('onUpdateActiveGames', async (activeGames: Omit<IGameState, 'cards'>[]) => {
+        gameSocket.emit('updateActiveGames', activeGames);
+    });
+
+});
 
 http.listen(3000, () => {
     console.log('listening on *:3000');
