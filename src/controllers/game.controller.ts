@@ -21,9 +21,6 @@ class GamesController {
         const userId = req.userId;
         const gameId = req.params.id;
         const actions = await ActionService.getActions(userId, parseInt(gameId, 10));
-
-        console.log('actions', actions);
-
         res.send(actions);
     }
 

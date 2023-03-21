@@ -245,7 +245,7 @@ class GameService {
 
 
         await Player.update({
-            orientation: PlayerOrientation.BOTTOM,
+            orientation: PlayerOrientation.INVERSE,
         }, {
             where: {
                 gameId,
@@ -254,7 +254,7 @@ class GameService {
         });
 
         await Player.update({
-            orientation: PlayerOrientation.TOP,
+            orientation: PlayerOrientation.DEFAULT,
         }, {
             where: {
                 gameId,

@@ -20,7 +20,7 @@ export class ActionService {
             return actions;
         }
 
-        const continiuumCards = game.cards.filter(c => c.index !== null);
+        const continiuumCards = game.cards.filter(c => c.index !== null).sort((a, b) => a.index - b.index);
 
         const playerCards = game.cards.filter(c => c.playerId === activePlayer.id);
 
@@ -70,14 +70,15 @@ export class ActionService {
 
     static getPastAndFutureCards(player: Player, cards: Card[]): { cardsInPast: Card[], cardsInFuture: Card[] } {
         const {
-            position: playerPosition,
             orientation,
         } = player;
+        let playerPosition = player.position;
 
         let continuumCards = [...cards];
 
-        if (orientation === PlayerOrientation.TOP) {
+        if (orientation === PlayerOrientation.INVERSE) {
             continuumCards.reverse();
+            playerPosition = continuumCards.length - 1 - playerPosition;
         }
 
         return {

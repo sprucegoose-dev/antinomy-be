@@ -352,7 +352,7 @@ describe('GameService', () => {
                 }
             });
 
-            expect(players.map(p => p.orientation).sort()).toEqual([PlayerOrientation.BOTTOM, PlayerOrientation.TOP]);
+            expect(players.map(p => p.orientation).sort()).toEqual([PlayerOrientation.DEFAULT, PlayerOrientation.INVERSE]);
         });
 
         it('should emit an \'update active games\' websocket event', async () => {

@@ -41,8 +41,8 @@ module.exports = {
             orientation: {
                 type: Sequelize.ENUM,
                 values: [
-                    'top',
-                    'bottom',
+                    'default',
+                    'inverse',
                 ],
                 defaultValue: null,
             },
