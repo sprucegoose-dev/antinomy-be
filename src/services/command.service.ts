@@ -6,7 +6,7 @@ import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
-import { GameState, ICombatData, } from '../types/game.interface';
+import { GamePhase, GameState, ICombatData, } from '../types/game.interface';
 import {
     CustomException,
     ERROR_BAD_REQUEST,
@@ -18,7 +18,7 @@ import { EventType } from '../types/event.interface';
 
 class CommandService {
 
-    static async handleDeploy(player: Player, payload: IActionPayload): Promise<void> {
+    static async handleDeploy(game: Game, player: Player, payload: IActionPayload): Promise<void> {
         await Player.update({
             position: payload.targetIndex,
         }, {
@@ -37,18 +37,16 @@ class CommandService {
         });
 
         if (deployedPlayers.length === 2) {
-            await Game.update({
-                state: GameState.STARTED,
-            }, {
-                where: {
-                    id: player.gameId,
-                }
-            });
+            game.state = GameState.STARTED;
+        } else {
+            game.activePlayerId = game.players.find(p => p.id !== player.id).id;
         }
+
+        await game.save();
+
     }
 
-    static async handleMove(player: Player, payload: IActionPayload) {
-        const game = await GameService.getState(player.gameId);
+    static async handleMove(game: Game, player: Player, payload: IActionPayload) {
         const continuumCard = game.cards.find(c => c.index === payload.targetIndex);
         const codexColor =  game.codexColor;
         const opponent =  game.players.find(p => p.id !== player.id);
@@ -85,15 +83,18 @@ class CommandService {
         // check if the player has formed a set (i.e. 'paradox')
         if (this.hasSet(playerCards, codexColor)) {
             await this.resolveParadox(game, player);
+            game.phase = GamePhase.REPLACEMENT;
         }
 
-        // go to the next player
-        game.activePlayerId = opponent.id;
+        if (game.phase === GamePhase.MOVEMENT) {
+            // go to the next player
+            game.activePlayerId = opponent.id;
+        }
 
         await game.save();
     }
 
-    static async handleReplace(player: Player, payload: IActionPayload): Promise<void> {
+    static async handleReplace(game: Game, player: Player, payload: IActionPayload): Promise<void> {
         const cards = await Card.findAll({
             where: {
                 gameId: player.gameId,
@@ -127,6 +128,11 @@ class CommandService {
                 cardsToPickUp[i].index
             );
         }
+
+        game.phase = GamePhase.MOVEMENT;
+        game.activePlayerId = game.players.find(p => p.id !== player.id).id;
+
+        await game.save();
     }
 
     static hasSet(cardsInHand: Card[], codexColor: Color): boolean {
@@ -173,17 +179,7 @@ class CommandService {
 
     static async handleAction(userId: number, gameId: number, payload: IActionPayload): Promise<void> {
         // validate action
-        const game = await Game.findOne({
-            where: {
-                id: gameId,
-            },
-            include: [
-                {
-                    model: Player,
-                    as: 'players'
-                },
-            ]
-        });
+        const game = await GameService.getState(gameId);
 
         if (!game) {
             throw new CustomException(ERROR_NOT_FOUND, 'Game not found');
@@ -199,13 +195,13 @@ class CommandService {
 
         switch (payload.type) {
             case ActionType.MOVE:
-                await this.handleMove(activePlayer, payload);
+                await this.handleMove(game, activePlayer, payload);
                 break;
             case ActionType.DEPLOY:
-                await this.handleDeploy(activePlayer, payload);
+                await this.handleDeploy(game, activePlayer, payload);
                 break;
             case ActionType.REPLACE:
-                await this.handleReplace(activePlayer, payload);
+                await this.handleReplace(game, activePlayer, payload);
                 break;
         }
 

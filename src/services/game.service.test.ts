@@ -5,7 +5,7 @@ import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { EventType } from '../types/event.interface';
-import { GameState } from '../types/game.interface';
+import { GamePhase, GameState } from '../types/game.interface';
 import { PlayerOrientation } from '../types/player.interface';
 import { IUserResponse } from '../types/user.interface';
 import EventService from './event.service';
@@ -329,6 +329,18 @@ describe('GameService', () => {
             });
 
             expect(updatedGame.codexColor).toBe(lastCard.type.color);
+        });
+
+        it('should set the starting game phase to \'deployment\'', async () => {
+            await GameService.start(userA.id, game.id);
+
+            const updatedGame = await Game.findOne({
+                where: {
+                    id: game.id,
+                }
+            });
+
+            expect(updatedGame.phase).toBe(GamePhase.DEPLOYMENT);
         });
 
         it('should orient one player at the top and one at the bottom', async () => {

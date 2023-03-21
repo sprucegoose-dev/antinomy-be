@@ -6,7 +6,7 @@ import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { Color } from '../types/card_type.interface';
-import { GameState, IGameState } from '../types/game.interface';
+import { GamePhase, GameState, IGameState } from '../types/game.interface';
 import CardService from './card.service';
 import { PlayerOrientation } from '../types/player.interface';
 import {
@@ -260,6 +260,7 @@ class GameService {
                 activePlayerId: startingPlayerId,
                 codexColor,
                 state: GameState.SETUP,
+                phase: GamePhase.DEPLOYMENT,
             },
             {
                 where: {

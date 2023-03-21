@@ -371,9 +371,10 @@ describe('CommandService', () => {
         let playerB: Player;
 
         beforeAll(async () => {
-            game = await GameService.create(userA.id);
-            playerA = await PlayerService.create(userA.id, game.id);
-            playerB = await PlayerService.create(userB.id, game.id);
+            const newGame = await GameService.create(userA.id);
+            playerA = await PlayerService.create(userA.id, newGame.id);
+            playerB = await PlayerService.create(userB.id, newGame.id);
+            game = await GameService.getState(newGame.id);
         });
 
         beforeEach(() => {
@@ -487,13 +488,13 @@ describe('CommandService', () => {
 
         describe('handleDeploy', () => {
 
-            it('should update player\'s position', async () => {
+            it('should update the player\'s position', async () => {
                 const actionPayload: IActionPayload = {
                     targetIndex: 4,
                     type: ActionType.DEPLOY,
                 };
 
-                await CommandService.handleDeploy(playerA, actionPayload);
+                await CommandService.handleDeploy(game, playerA, actionPayload);
 
                 const updatedPlayer = await Player.findOne({
                     where: {
@@ -510,7 +511,7 @@ describe('CommandService', () => {
                     type: ActionType.DEPLOY,
                 };
 
-                await CommandService.handleDeploy(playerB, actionPayload);
+                await CommandService.handleDeploy(game, playerB, actionPayload);
 
                 const updatedGame = await Game.findOne({
                     where: {
@@ -548,7 +549,7 @@ describe('CommandService', () => {
 
                 playerA.position = 5;
 
-                await CommandService.handleReplace(playerA, actionPayload);
+                await CommandService.handleReplace(game, playerA, actionPayload);
 
                 const updatedContinuumCards = await Card.findAll({
                     where: {
@@ -587,7 +588,7 @@ describe('CommandService', () => {
 
                 playerA.position = 5;
 
-                await CommandService.handleReplace(playerA, actionPayload);
+                await CommandService.handleReplace(game, playerA, actionPayload);
 
                 const updatedPlayerCards = await Card.findAll({
                     where: {
@@ -619,7 +620,7 @@ describe('CommandService', () => {
 
                 playerA.position = 5;
 
-                await CommandService.handleReplace(playerA, actionPayload);
+                await CommandService.handleReplace(game, playerA, actionPayload);
 
                 const updatedContinuumCards = await Card.findAll({
                     where: {
@@ -646,6 +647,8 @@ describe('CommandService', () => {
             it('should update the player\'s position to the target index', async () => {
                 await GameService.start(userA.id, game.id);
 
+                const startedGame = await GameService.getState(game.id);
+
                 const playerCards = await await Card.findAll({
                     where: {
                         playerId: playerA.id,
@@ -660,7 +663,7 @@ describe('CommandService', () => {
 
                 playerA.position = 5;
 
-                await CommandService.handleMove(playerA, actionPayload);
+                await CommandService.handleMove(startedGame, playerA, actionPayload);
 
                 const updatedPlayer = await Player.findOne({
                     where: {
@@ -673,6 +676,8 @@ describe('CommandService', () => {
 
             it('should swap the player\'s card with a card from the continuum', async () => {
                 await GameService.start(userA.id, game.id);
+
+                const startedGame = await GameService.getState(game.id);
 
                 const playerCards = await await Card.findAll({
                     where: {
@@ -695,7 +700,7 @@ describe('CommandService', () => {
 
                 playerA.position = 5;
 
-                await CommandService.handleMove(playerA, actionPayload);
+                await CommandService.handleMove(startedGame, playerA, actionPayload);
 
 
                 const updatedPlayerCard = await Card.findAll({
@@ -718,6 +723,8 @@ describe('CommandService', () => {
 
             it('should advance the codex color if the player has formed a set (i.e. \'paradox\')', async () => {
                 await GameService.start(userA.id, game.id);
+
+                const startedGame = await GameService.getState(game.id);
 
                 const currentGame = await Game.findOne({
                     where: {
@@ -743,7 +750,7 @@ describe('CommandService', () => {
 
                 playerA.position = 5;
 
-                await CommandService.handleMove(playerA, actionPayload);
+                await CommandService.handleMove(startedGame, playerA, actionPayload);
 
                 const updatedGame = await Game.findOne({
                     where: {
