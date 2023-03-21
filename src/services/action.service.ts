@@ -2,7 +2,7 @@ import { Card } from '../models/card.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color } from '../types/card_type.interface';
-import { GamePhase } from '../types/game.interface';
+import { GamePhase, GameState } from '../types/game.interface';
 import { PlayerOrientation } from '../types/player.interface';
 import GameService from './game.service';
 
@@ -16,7 +16,7 @@ export class ActionService {
             p.id === game.activePlayerId && p.userId === userId
         );
 
-        if (!activePlayer) {
+        if (!activePlayer || game.state === GameState.ENDED) {
             return actions;
         }
 

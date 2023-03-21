@@ -365,6 +365,77 @@ describe('CommandService', () => {
 
     });
 
+    describe('resolveParadox', () => {
+        let game: Game;
+        let playerA: Player;
+
+        beforeAll(async () => {
+            game = await GameService.create(userA.id);
+            playerA = await PlayerService.create(userA.id, game.id);
+            await PlayerService.create(userB.id, game.id);
+            await GameService.start(userA.id, game.id);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        afterAll(async () => {
+            await Game.truncate();
+        });
+
+        it('should award the player a point', async () => {
+            await CommandService.resolveParadox(
+                game,
+                playerA,
+            );
+
+            const updatedPlayer = await Player.findByPk(playerA.id);
+
+            expect(updatedPlayer.points).toBe(1);
+        });
+
+        it('should advance the Codex color', async () => {
+            const initialCodexColor = Color.RED;
+
+            await Game.update({
+                codexColor: initialCodexColor,
+            }, {
+                where: {
+                    id: game.id,
+                }
+            });
+
+           let updatedGame = await Game.findByPk(game.id);
+
+            await CommandService.resolveParadox(
+                updatedGame,
+                playerA,
+            );
+
+            updatedGame = await Game.findByPk(game.id);
+
+            const nextCodexColor = CommandService.getNextCodeColor(initialCodexColor);
+
+            expect(updatedGame.codexColor).toBe(nextCodexColor);
+        });
+
+        it('should end the game and set a winner if the player has reached 5 points', async () => {
+            playerA.points = 4;
+
+            await CommandService.resolveParadox(
+                game,
+                playerA,
+            );
+
+            const updatedGame = await Game.findByPk(game.id);
+
+            expect(updatedGame.winnerId).toBe(playerA.userId);
+            expect(updatedGame.state).toBe(GameState.ENDED);
+        });
+
+    });
+
     describe('Commands', () => {
         let game: Game;
         let playerA: Player;

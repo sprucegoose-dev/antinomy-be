@@ -297,8 +297,8 @@ class CommandService {
 
         // check victory condition
         if (playerPoints === 5) {
-            game.winnerId === player.userId;
-            game.state === GameState.ENDED;
+            game.winnerId = player.userId;
+            game.state = GameState.ENDED;
         }
 
         await game.save();
