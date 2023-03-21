@@ -15,6 +15,7 @@ import {
 import GameService from './game.service';
 import EventService from './event.service';
 import { EventType } from '../types/event.interface';
+import { PlayerOrientation } from '../types/player.interface';
 
 class CommandService {
 
@@ -98,11 +99,13 @@ class CommandService {
         const cards = await Card.findAll({
             where: {
                 gameId: player.gameId,
-            }
+            },
+            order: [['index', 'asc']],
         });
 
         const continuumCards = [];
         let playerCards = [];
+        let playerPosition = player.position;
 
         for (const card of cards) {
             if (card.index !== null) {
@@ -114,7 +117,12 @@ class CommandService {
             }
         }
 
-        const cardsToPickUp = player.position < payload.targetIndex ?
+        if (player.orientation === PlayerOrientation.INVERSE) {
+            continuumCards.reverse();
+            playerPosition = continuumCards.length - 1 - playerPosition;
+        }
+
+        const cardsToPickUp = playerPosition < payload.targetIndex ?
             continuumCards.slice(payload.targetIndex, payload.targetIndex + 3) :
             continuumCards.slice(payload.targetIndex - 3, payload.targetIndex);
 
