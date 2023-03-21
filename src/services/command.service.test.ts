@@ -626,7 +626,7 @@ describe('CommandService', () => {
                     where: {
                         gameId: game.id,
                         index: {
-                            [Op.in]: [1, 2, 3]
+                            [Op.in]: [2, 3, 4]
                         }
                     }
                 });

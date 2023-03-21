@@ -15,7 +15,6 @@ import {
 import GameService from './game.service';
 import EventService from './event.service';
 import { EventType } from '../types/event.interface';
-import { PlayerOrientation } from '../types/player.interface';
 
 class CommandService {
 
@@ -103,9 +102,11 @@ class CommandService {
             order: [['index', 'asc']],
         });
 
+
         const continuumCards = [];
         let playerCards = [];
         let playerPosition = player.position;
+        let targetIndex = payload.targetIndex;
 
         for (const card of cards) {
             if (card.index !== null) {
@@ -117,14 +118,9 @@ class CommandService {
             }
         }
 
-        if (player.orientation === PlayerOrientation.INVERSE) {
-            continuumCards.reverse();
-            playerPosition = continuumCards.length - 1 - playerPosition;
-        }
-
-        const cardsToPickUp = playerPosition < payload.targetIndex ?
-            continuumCards.slice(payload.targetIndex, payload.targetIndex + 3) :
-            continuumCards.slice(payload.targetIndex - 3, payload.targetIndex);
+        const cardsToPickUp = playerPosition < targetIndex ?
+            continuumCards.slice(targetIndex, targetIndex + 3) :
+            continuumCards.slice(targetIndex - 2, targetIndex + 1);
 
         playerCards = shuffle(playerCards);
 
