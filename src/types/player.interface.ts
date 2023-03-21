@@ -1,6 +1,6 @@
 export enum PlayerOrientation {
     TOP = 'top',
-    BOTTOM = 'top',
+    BOTTOM = 'bottom',
 }
 
 export interface IPlayer {

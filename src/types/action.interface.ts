@@ -1,4 +1,4 @@
-import { AuthRequest } from "./index.interface";
+import { AuthRequest } from './index.interface';
 
 export enum ActionType {
     MOVE = 'move',

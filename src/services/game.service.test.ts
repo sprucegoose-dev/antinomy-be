@@ -6,6 +6,7 @@ import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { EventType } from '../types/event.interface';
 import { GameState } from '../types/game.interface';
+import { PlayerOrientation } from '../types/player.interface';
 import { IUserResponse } from '../types/user.interface';
 import EventService from './event.service';
 import GameService from './game.service';
@@ -328,6 +329,18 @@ describe('GameService', () => {
             });
 
             expect(updatedGame.codexColor).toBe(lastCard.type.color);
+        });
+
+        it('should orient one player at the top and one at the bottom', async () => {
+            await GameService.start(userA.id, game.id);
+
+            const players = await Player.findAll({
+                where: {
+                    gameId: game.id,
+                }
+            });
+
+            expect(players.map(p => p.orientation).sort()).toEqual([PlayerOrientation.BOTTOM, PlayerOrientation.TOP]);
         });
 
         it('should emit an \'update active games\' websocket event', async () => {

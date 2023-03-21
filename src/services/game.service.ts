@@ -234,6 +234,7 @@ class GameService {
 
         const startingPlayerId = shuffle(players)[0].id;
 
+
         await Player.update({
             orientation: PlayerOrientation.BOTTOM,
         }, {
