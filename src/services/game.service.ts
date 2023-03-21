@@ -76,6 +76,15 @@ class GameService {
                 {
                     model: Player,
                     as: 'players',
+                    include: [
+                        {
+                            model: User,
+                            attributes: [
+                                'id',
+                                'username',
+                            ],
+                        }
+                    ],
                 },
                 {
                     model: Card,

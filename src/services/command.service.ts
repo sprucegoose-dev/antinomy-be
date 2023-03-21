@@ -38,12 +38,12 @@ class CommandService {
 
         if (deployedPlayers.length === 2) {
             game.state = GameState.STARTED;
-        } else {
-            game.activePlayerId = game.players.find(p => p.id !== player.id).id;
+            game.phase = GamePhase.MOVEMENT;
         }
 
-        await game.save();
+        game.activePlayerId = game.players.find(p => p.id !== player.id).id;
 
+        await game.save();
     }
 
     static async handleMove(game: Game, player: Player, payload: IActionPayload) {
@@ -211,7 +211,6 @@ class CommandService {
             type: EventType.GAME_UPDATE,
             payload: updatedGameState
         });
-
     }
 
     static async resolveCombat({

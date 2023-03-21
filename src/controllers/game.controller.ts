@@ -55,8 +55,8 @@ class GamesController {
     async handleAction(req: IActionRequest, res: Response): Promise<void> {
         const userId = req.userId;
         const gameId = req.params.id;
-        const paylod = req.body;
-        await CommandService.handleAction(userId, parseInt(gameId, 10), paylod);
+        const payload = req.body;
+        await CommandService.handleAction(userId, parseInt(gameId, 10), payload);
         res.send();
     }
 
