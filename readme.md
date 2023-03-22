@@ -11,6 +11,8 @@
 - Run `npm run migrate` to create all tables in the database
 - Run `npm run seed` to populate the database with required information
 
+*It is recommended to use [MAMP](https://www.mamp.info/) to run your database.
+
 ## Available Scripts
 
 ### `npm start`

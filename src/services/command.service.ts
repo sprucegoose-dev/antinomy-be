@@ -102,7 +102,6 @@ class CommandService {
             order: [['index', 'asc']],
         });
 
-
         const continuumCards = [];
         let playerCards = [];
         let playerPosition = player.position;
@@ -182,7 +181,7 @@ class CommandService {
     }
 
     static async handleAction(userId: number, gameId: number, payload: IActionPayload): Promise<void> {
-        // validate action
+        // TODO: validate action
         const game = await GameService.getState(gameId);
 
         if (!game) {
