@@ -3,8 +3,11 @@ import { Socket } from 'socket.io';
 import UsersController from './controllers/user.controller';
 import GamesController from './controllers/game.controller';
 import AuthMiddleware from './middleware/auth.middleware';
-import { EventType } from './types/event.interface';
 import '../database/connection';
+import {
+    EVENT_JOIN_GAME,
+    EVENT_LEAVE_GAME,
+} from './types/event.interface';
 
 const express = require('express');
 const app = require('express')();
@@ -48,11 +51,11 @@ server.listen(3000, () => {
 });
 
 gameSocket.on('connection', (socket: Socket) => {
-    socket.on(EventType.JOIN_GAME, (gameId: number) => {
+    socket.on(EVENT_JOIN_GAME, (gameId: number) => {
         socket.join(`game-${gameId}`);
     });
 
-    socket.on(EventType.LEAVE_GAME, (gameId: number) => {
+    socket.on(EVENT_LEAVE_GAME, (gameId: number) => {
         socket.leave(`game-${gameId}`);
     });
 });

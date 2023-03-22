@@ -4,7 +4,7 @@ import { Card } from '../models/card.model';
 import { CardType } from '../models/card_type.model';
 import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
-import { EventType } from '../types/event.interface';
+import { EVENT_ACTIVE_GAMES_UPDATE } from '../types/event.interface';
 import { GamePhase, GameState } from '../types/game.interface';
 import { PlayerOrientation } from '../types/player.interface';
 import { IUserResponse } from '../types/user.interface';
@@ -66,7 +66,7 @@ describe('GameService', () => {
             const emitEventSpy = jest.spyOn(EventService, 'emitEvent');
 
             expect(emitEventSpy).toHaveBeenCalledWith({
-                type: EventType.ACTIVE_GAMES_UPDATE,
+                type: EVENT_ACTIVE_GAMES_UPDATE,
                 payload: activeGames
             });
         });
@@ -170,7 +170,7 @@ describe('GameService', () => {
             const emitEventSpy = jest.spyOn(EventService, 'emitEvent');
 
             expect(emitEventSpy).toHaveBeenCalledWith({
-                type: EventType.ACTIVE_GAMES_UPDATE,
+                type: EVENT_ACTIVE_GAMES_UPDATE,
                 payload: activeGames
             });
         });
@@ -363,7 +363,7 @@ describe('GameService', () => {
             const emitEventSpy = jest.spyOn(EventService, 'emitEvent');
 
             expect(emitEventSpy).toHaveBeenCalledWith({
-                type: EventType.ACTIVE_GAMES_UPDATE,
+                type: EVENT_ACTIVE_GAMES_UPDATE,
                 payload: activeGames
             });
         });

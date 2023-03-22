@@ -16,8 +16,8 @@ import {
 } from '../helpers/exception_handler';
 import PlayerService from './player.service';
 import EventService from './event.service';
-import { EventType } from '../types/event.interface';
 import { User } from '../models/user.model';
+import { EVENT_ACTIVE_GAMES_UPDATE, EVENT_GAME_UPDATE } from '../types/event.interface';
 
 class GameService {
 
@@ -38,7 +38,7 @@ class GameService {
         const activeGames = await this.getActiveGames();
 
         EventService.emitEvent({
-            type: EventType.ACTIVE_GAMES_UPDATE,
+            type: EVENT_ACTIVE_GAMES_UPDATE,
             payload: activeGames
         });
 
@@ -137,7 +137,7 @@ class GameService {
         const activeGames = await this.getActiveGames();
 
         EventService.emitEvent({
-            type: EventType.ACTIVE_GAMES_UPDATE,
+            type: EVENT_ACTIVE_GAMES_UPDATE,
             payload: activeGames
         });
     }
@@ -186,10 +186,17 @@ class GameService {
             await game.destroy();
         }
 
+        const updatedGameState = await GameService.getState(gameId);
+
+        EventService.emitEvent({
+            type: EVENT_GAME_UPDATE,
+            payload: updatedGameState
+        });
+
         const activeGames = await this.getActiveGames();
 
         EventService.emitEvent({
-            type: EventType.ACTIVE_GAMES_UPDATE,
+            type: EVENT_ACTIVE_GAMES_UPDATE,
             payload: activeGames
         });
     }
@@ -292,7 +299,7 @@ class GameService {
         const activeGames = await this.getActiveGames();
 
         EventService.emitEvent({
-            type: EventType.ACTIVE_GAMES_UPDATE,
+            type: EVENT_ACTIVE_GAMES_UPDATE,
             payload: activeGames
         });
     }

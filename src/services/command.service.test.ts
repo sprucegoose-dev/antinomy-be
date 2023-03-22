@@ -5,7 +5,7 @@ import { Game } from '../models/game.model';
 import { Player } from '../models/player.model';
 import { ActionType, IActionPayload } from '../types/action.interface';
 import { Color, Suit } from '../types/card_type.interface';
-import { EventType } from '../types/event.interface';
+import { EVENT_GAME_UPDATE } from '../types/event.interface';
 import { GameState } from '../types/game.interface';
 import { IUserResponse } from '../types/user.interface';
 import CardService from './card.service';
@@ -550,7 +550,7 @@ describe('CommandService', () => {
                 await CommandService.handleAction(userA.id, game.id, payload);
 
                 expect(emitEventSpy).toHaveBeenCalledWith({
-                    type: EventType.GAME_UPDATE,
+                    type: EVENT_GAME_UPDATE,
                     payload: updatedGame,
                 });
             });

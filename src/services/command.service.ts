@@ -14,7 +14,7 @@ import {
 } from '../helpers/exception_handler';
 import GameService from './game.service';
 import EventService from './event.service';
-import { EventType } from '../types/event.interface';
+import { EVENT_GAME_UPDATE } from '../types/event.interface';
 
 class CommandService {
 
@@ -212,7 +212,7 @@ class CommandService {
         const updatedGameState = await GameService.getState(gameId);
 
         EventService.emitEvent({
-            type: EventType.GAME_UPDATE,
+            type: EVENT_GAME_UPDATE,
             payload: updatedGameState
         });
     }
