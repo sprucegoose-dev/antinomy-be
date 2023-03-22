@@ -6,7 +6,6 @@ export enum EventType {
 }
 
 export interface IEvent {
-    gameId?: number;
     payload?: any;
     type: EventType;
 }

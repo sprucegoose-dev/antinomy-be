@@ -21,7 +21,7 @@ import { User } from '../models/user.model';
 
 class GameService {
 
-    static async create(userId: number): Promise<IGameState> {
+    static async create(userId: number, autoAddPlayer: boolean = false): Promise<IGameState> {
         if (await this.hasActiveGames(userId)) {
             throw new CustomException(ERROR_BAD_REQUEST, 'Please leave your other active game(s) before creating a new one.');
         }
@@ -30,6 +30,10 @@ class GameService {
             creatorId: userId,
             state: GameState.CREATED,
         });
+
+        if (autoAddPlayer) {
+            await PlayerService.create(userId, game.id);
+        }
 
         const activeGames = await this.getActiveGames();
 
@@ -45,7 +49,7 @@ class GameService {
         return await Game.findAll({
             where: {
                 state: {
-                    [Op.not]: GameState.ENDED,
+                    [Op.not]: [GameState.ENDED, GameState.CANCELLED]
                 },
             },
             include: [
@@ -129,6 +133,13 @@ class GameService {
         }
 
         await PlayerService.create(userId, gameId);
+
+        const activeGames = await this.getActiveGames();
+
+        EventService.emitEvent({
+            type: EventType.ACTIVE_GAMES_UPDATE,
+            payload: activeGames
+        });
     }
 
     static async leave(userId: number, gameId: number): Promise<void> {

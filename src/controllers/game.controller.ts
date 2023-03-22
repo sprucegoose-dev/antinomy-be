@@ -4,7 +4,6 @@ import { exceptionHandler } from '../helpers/exception_handler.decorator';
 import { ActionService } from '../services/action.service';
 import CommandService from '../services/command.service';
 import GameService from '../services/game.service';
-import PlayerService from '../services/player.service';
 import { IActionRequest } from '../types/action.interface';
 import { AuthRequest } from '../types/index.interface';
 
@@ -12,8 +11,7 @@ import { AuthRequest } from '../types/index.interface';
 class GamesController {
 
     async create(req: AuthRequest, res: Response): Promise<void> {
-        const game = await GameService.create(req.userId);
-        await PlayerService.create(req.userId, game.id);
+        const game = await GameService.create(req.userId, true);
         res.send(game);
     }
 
