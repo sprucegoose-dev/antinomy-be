@@ -267,7 +267,7 @@ describe('CommandService', () => {
                 }
             ];
 
-            // Three cards with a value of 1
+            // three cards with a value of 1
             const mockOpponentCards = cards.filter(c =>
                 c.type.color !== game.codexColor
             ).slice(0, 3).map(c => {
@@ -523,7 +523,6 @@ describe('CommandService', () => {
 
                 expect(handleDeploySpy).toHaveBeenCalled();
             });
-
 
             it('should emit an \'update game\' event', async () => {
                 const emitEventSpy = jest.spyOn(EventService, 'emitEvent');

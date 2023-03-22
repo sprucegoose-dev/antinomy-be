@@ -184,14 +184,14 @@ class GameService {
 
         if (game.players.length - 1 === 0) {
             await game.destroy();
+        } else {
+            const updatedGameState = await GameService.getState(gameId);
+
+            EventService.emitEvent({
+                type: EVENT_GAME_UPDATE,
+                payload: updatedGameState
+            });
         }
-
-        const updatedGameState = await GameService.getState(gameId);
-
-        EventService.emitEvent({
-            type: EVENT_GAME_UPDATE,
-            payload: updatedGameState
-        });
 
         const activeGames = await this.getActiveGames();
 
