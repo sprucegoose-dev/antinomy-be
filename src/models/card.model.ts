@@ -8,7 +8,10 @@ import { CardType } from './card_type.model';
 import { Game } from './game.model';
 import { Player } from './player.model';
 
-@Table({ timestamps: false })
+@Table({
+    tableName: 'cards',
+    timestamps: false,
+})
 export class Card extends Model {
     @Column({ primaryKey: true, autoIncrement: true })
     id: number;

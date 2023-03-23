@@ -7,6 +7,7 @@ import {
 } from 'sequelize-typescript';
 
 @Table({
+    tableName: 'users',
     timestamps: true,
     defaultScope: {
         attributes: {

@@ -15,6 +15,7 @@ import { User } from './user.model';
 
 
 @Table({
+    tableName: 'games',
     timestamps: true,
 })
 export class Game extends Model {

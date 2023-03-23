@@ -8,7 +8,10 @@ import { PlayerOrientation } from '../types/player.interface';
 import { Game } from './game.model';
 import { User } from './user.model';
 
-@Table({ timestamps: false })
+@Table({
+    tableName: 'players',
+    timestamps: false,
+})
 export class Player extends Model {
     @Column({ primaryKey: true, autoIncrement: true })
     id: number;

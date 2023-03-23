@@ -12,13 +12,13 @@ import {
 const express = require('express');
 const app = require('express')();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server, {
+const socket = require('socket.io')(server, {
     cors: {
         origin: 'http://localhost:8080',
     },
     transports: [
         'websocket',
-        'polling'
+        'polling',
     ],
 });
 
@@ -44,7 +44,7 @@ app.post('/game/:id/leave', GamesController.leave);
 app.get('/game/:id', GamesController.getState);
 app.post('/game', GamesController.create);
 
-export const gameSocket = io;
+export const gameSocket = socket;
 
 server.listen(3000, () => {
     console.log('listening on *:3000');
