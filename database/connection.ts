@@ -45,17 +45,17 @@ const options = {
 };
 
 const sequelize = NODE_ENV === 'test' ?
-new Sequelize('sqlite::memory:', {
-    logging: false,
-    models: [
-        User,
-        Player,
-        Game,
-        CardType,
-        Card,
-    ],
-}) :
-new Sequelize(DB_NAME, DB_USER, DB_PASS, options);
+    new Sequelize('sqlite::memory:', {
+        logging: false,
+        models: [
+            User,
+            Player,
+            Game,
+            CardType,
+            Card,
+        ],
+    }) :
+    new Sequelize(DB_NAME, DB_USER, DB_PASS, options);
 
 export default sequelize;
 
