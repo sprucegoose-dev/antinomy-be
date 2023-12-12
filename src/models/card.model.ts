@@ -41,7 +41,6 @@ export class Card extends Model {
             key: 'id',
         }
     })
-    @Column
     cardTypeId: number;
 
     @Column
